@@ -1,17 +1,13 @@
-'use client'
+'use client';
 
-import { useEffect, useRef } from 'react'
-import Link from 'next/link'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { StudioLoader } from '@/components/studio/studio-loader'
-import StoreProvider from '@/providers/store-provider'
-import { StudioDataProvider, useStudioData } from '@/context/studio-data-context'
-import { useAppSelector } from '@/store/hooks'
-import { UI_SIZES } from '@/lib/constants/theme'
-import { ROUTES } from '@/lib/constants/app'
-import { ArrowLeft, CreditCard } from 'lucide-react'
+import { useEffect, useRef } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { StudioLoader } from '@/components/studio/studio-loader';
+import { useStudioData } from '@/context/studio-data-context';
+import { useAppSelector } from '@/store/hooks';
+import { UI_SIZES } from '@/lib/constants/theme';
+import { CreditCard } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -19,34 +15,30 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@/components/ui/table';
 
 function BillingContent() {
-  const { fetchBilling } = useStudioData()
-  const billing = useAppSelector((s) => s.studio.billing)
-  const loading = useAppSelector((s) => s.studio.loading.billing)
-  const fetched = useRef(false)
+  const { fetchBilling } = useStudioData();
+  const billing = useAppSelector((s) => s.studio.billing);
+  const loading = useAppSelector((s) => s.studio.loading.billing);
+  const fetched = useRef(false);
 
   useEffect(() => {
-    if (fetched.current) return
-    fetched.current = true
-    void fetchBilling()
-  }, [fetchBilling])
+    if (fetched.current) return;
+    fetched.current = true;
+    void fetchBilling();
+  }, [fetchBilling]);
 
-  if (loading && !billing) return <StudioLoader rows={4} />
+  if (loading && !billing) return <StudioLoader rows={4} />;
 
   return (
     <div className="min-h-[calc(100vh-220px)] px-4 py-6 lg:px-8">
       <div className="mx-auto max-w-2xl flex flex-col gap-4">
-        <Button variant="ghost" size="sm" className="h-7 text-[10px] w-fit" asChild>
-          <Link href={ROUTES.settings}>
-            <ArrowLeft className="size-3 mr-1" />
-            Back to Settings
-          </Link>
-        </Button>
 
         <div className="flex flex-col gap-1">
-          <h1 className={UI_SIZES.pageTitle} style={{ fontFamily: "'Syne', sans-serif" }}>Billing</h1>
+          <h1 className={UI_SIZES.pageTitle} style={{ fontFamily: "'Syne', sans-serif" }}>
+            Billing
+          </h1>
           <p className={UI_SIZES.pageSubtitle}>Manage your plan, credits, and payment history.</p>
         </div>
 
@@ -61,13 +53,18 @@ function BillingContent() {
           <CardContent className="flex flex-col gap-2 px-4 pb-4 text-xs">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Credits remaining</span>
-              <span className="font-black tabular-nums" style={{ fontFamily: "'Syne', sans-serif" }}>
+              <span
+                className="font-black tabular-nums"
+                style={{ fontFamily: "'Syne', sans-serif" }}
+              >
                 {billing?.credits ?? 0}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Renewal date</span>
-              <span>{billing?.renewalDate ? new Date(billing.renewalDate).toLocaleDateString() : '—'}</span>
+              <span>
+                {billing?.renewalDate ? new Date(billing.renewalDate).toLocaleDateString() : '—'}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -89,11 +86,17 @@ function BillingContent() {
               <TableBody>
                 {billing?.invoices.map((inv) => (
                   <TableRow key={inv.id}>
-                    <TableCell className="text-xs">{new Date(inv.date).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{inv.description}</TableCell>
+                    <TableCell className="text-xs">
+                      {new Date(inv.date).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {inv.description}
+                    </TableCell>
                     <TableCell className="text-xs">${inv.amount}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-[9px] capitalize">{inv.status}</Badge>
+                      <Badge variant="outline" className="text-[9px] capitalize">
+                        {inv.status}
+                      </Badge>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -103,15 +106,9 @@ function BillingContent() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
 
 export default function BillingPage() {
-  return (
-    <StoreProvider>
-      <StudioDataProvider>
-        <BillingContent />
-      </StudioDataProvider>
-    </StoreProvider>
-  )
+  return <BillingContent />;
 }

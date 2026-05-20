@@ -3,13 +3,13 @@ export const ACCENT_COLORS = {
   stomp: '#c4922a',
   scuttle: '#4a7c59',
   survived: '#1a6b8a',
-} as const
+} as const;
 
 export const FONT_FAMILIES = {
   heading: "'Syne', sans-serif",
   body: "'DM Serif Display', serif",
   mono: "'DM Mono', monospace",
-} as const
+} as const;
 
 export const UI_SIZES = {
   pageTitle: 'text-lg font-black tracking-tight',
@@ -19,4 +19,4 @@ export const UI_SIZES = {
   cardValue: 'text-xl font-black tabular-nums',
   badge: 'text-[10px] tracking-widest uppercase',
   tableText: 'text-xs',
-} as const
+} as const;

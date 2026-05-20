@@ -1,16 +1,16 @@
-'use client'
+'use client';
 
-import { useEffect, useRef } from 'react'
-import Link from 'next/link'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { StudioPageHeader } from '@/components/studio/studio-page-header'
-import { StudioLoader } from '@/components/studio/studio-loader'
-import { useStudioData } from '@/context/studio-data-context'
-import { useAppSelector } from '@/store/hooks'
-import { UI_SIZES } from '@/lib/constants/theme'
-import { ExternalLink, MapPin } from 'lucide-react'
+import { useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { StudioPageHeader } from '@/components/studio/studio-page-header';
+import { StudioLoader } from '@/components/studio/studio-loader';
+import { useStudioData } from '@/context/studio-data-context';
+import { useAppSelector } from '@/store/hooks';
+import { UI_SIZES } from '@/lib/constants/theme';
+import { ExternalLink, MapPin } from 'lucide-react';
 
 const STATUS_COLORS: Record<string, string> = {
   saved: '#c4922a',
@@ -18,21 +18,21 @@ const STATUS_COLORS: Record<string, string> = {
   interview: '#4a7c59',
   rejected: '#b5451b',
   offer: '#4a7c59',
-}
+};
 
 export default function ApplicationsPage() {
-  const { fetchApplications } = useStudioData()
-  const applications = useAppSelector((s) => s.studio.applications)
-  const loading = useAppSelector((s) => s.studio.loading.applications)
-  const fetched = useRef(false)
+  const { fetchApplications } = useStudioData();
+  const applications = useAppSelector((s) => s.studio.applications);
+  const loading = useAppSelector((s) => s.studio.loading.applications);
+  const fetched = useRef(false);
 
   useEffect(() => {
-    if (fetched.current) return
-    fetched.current = true
-    void fetchApplications()
-  }, [fetchApplications])
+    if (fetched.current) return;
+    fetched.current = true;
+    void fetchApplications();
+  }, [fetchApplications]);
 
-  if (loading && applications.length === 0) return <StudioLoader rows={6} />
+  if (loading && applications.length === 0) return <StudioLoader rows={6} />;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -82,5 +82,5 @@ export default function ApplicationsPage() {
         ))}
       </div>
     </div>
-  )
+  );
 }

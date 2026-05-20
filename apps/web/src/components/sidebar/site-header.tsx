@@ -1,18 +1,18 @@
-'use client'
+'use client';
 
-import { usePathname } from 'next/navigation'
-import { Separator } from '@/components/ui/separator'
-import { SidebarTrigger } from '@/components/ui/sidebar'
-import { ThemeToggle } from '@/components/layout/theme-toggler'
-import { PAGE_TITLES } from '@/lib/constants/navigation'
-import Link from 'next/link'
-import { ROUTES } from '@/lib/constants/app'
-import { Button } from '@/components/ui/button'
-import { Settings2Icon } from 'lucide-react'
+import { usePathname } from 'next/navigation';
+import { Separator } from '@/components/ui/separator';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+import { ThemeToggle } from '@/components/layout/theme-toggler';
+import { PAGE_TITLES } from '@/lib/constants/navigation';
+import Link from 'next/link';
+import { ROUTES } from '@/lib/constants/app';
+import { Button } from '@/components/ui/button';
+import { Settings2Icon } from 'lucide-react';
 
 export function SiteHeader() {
-  const pathname = usePathname()
-  const title = PAGE_TITLES[pathname] ?? 'Studio'
+  const pathname = usePathname();
+  const title = PAGE_TITLES[pathname] ?? 'Studio';
 
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b border-border/30 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
@@ -35,5 +35,5 @@ export function SiteHeader() {
         </div>
       </div>
     </header>
-  )
+  );
 }

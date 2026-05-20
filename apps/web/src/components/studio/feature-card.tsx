@@ -1,19 +1,19 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { ArrowRight } from 'lucide-react'
-import { UI_SIZES } from '@/lib/constants/theme'
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { ArrowRight } from 'lucide-react';
+import { UI_SIZES } from '@/lib/constants/theme';
 
 interface FeatureCardProps {
-  label: string
-  title: string
-  desc: string
-  href: string
-  cta: string
-  accent: string
+  label: string;
+  title: string;
+  desc: string;
+  href: string;
+  cta: string;
+  accent: string;
 }
 
 export function FeatureCard({ label, title, desc, href, cta, accent }: FeatureCardProps) {
@@ -43,5 +43,5 @@ export function FeatureCard({ label, title, desc, href, cta, accent }: FeatureCa
         </Button>
       </CardContent>
     </Card>
-  )
+  );
 }

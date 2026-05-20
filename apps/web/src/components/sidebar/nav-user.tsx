@@ -1,13 +1,9 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { useClerk, useUser } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/components/ui/avatar'
+import Link from 'next/link';
+import { useClerk, useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,36 +12,43 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu';
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from '@/components/ui/sidebar'
-import { EllipsisVerticalIcon, CircleUserRoundIcon, CreditCardIcon, BellIcon, LogOutIcon, Settings2Icon } from 'lucide-react'
-import { ROUTES } from '@/lib/constants/app'
+} from '@/components/ui/sidebar';
+import {
+  EllipsisVerticalIcon,
+  CircleUserRoundIcon,
+  CreditCardIcon,
+  BellIcon,
+  LogOutIcon,
+  Settings2Icon,
+} from 'lucide-react';
+import { ROUTES } from '@/lib/constants/app';
 
 export function NavUser() {
-  const { isMobile } = useSidebar()
-  const { user } = useUser()
-  const { signOut } = useClerk()
-  const router = useRouter()
+  const { isMobile } = useSidebar();
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const router = useRouter();
 
-  const name = user?.fullName ?? user?.username ?? 'User'
-  const email = user?.primaryEmailAddress?.emailAddress ?? ''
-  const avatar = user?.imageUrl ?? ''
+  const name = user?.fullName ?? user?.username ?? 'User';
+  const email = user?.primaryEmailAddress?.emailAddress ?? '';
+  const avatar = user?.imageUrl ?? '';
   const initials = name
     .split(' ')
     .map((n) => n[0])
     .join('')
     .slice(0, 2)
-    .toUpperCase()
+    .toUpperCase();
 
   const handleLogout = async () => {
-    await signOut()
-    router.push(ROUTES.login)
-  }
+    await signOut();
+    router.push(ROUTES.login);
+  };
 
   return (
     <SidebarMenu>
@@ -121,5 +124,5 @@ export function NavUser() {
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }

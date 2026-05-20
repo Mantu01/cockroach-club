@@ -1,9 +1,9 @@
-'use client'
+'use client';
 
-import { createContext, ReactNode, useCallback, useContext, useMemo, useRef } from 'react'
-import { useAuth as useClerkAuth } from '@clerk/nextjs'
-import { setAuthToken, studioApi } from '@/lib/api'
-import { useAppDispatch } from '@/store/hooks'
+import { createContext, ReactNode, useCallback, useContext, useMemo, useRef } from 'react';
+import { useAuth as useClerkAuth } from '@clerk/nextjs';
+import { setAuthToken, studioApi } from '@/lib/api';
+import { useAppDispatch } from '@/store/hooks';
 import {
   setLoading,
   setError,
@@ -18,7 +18,7 @@ import {
   setBilling,
   setAccount,
   updateNotification,
-} from '@/store/slices/studio-slice'
+} from '@/store/slices/studio-slice';
 
 type FetchKey =
   | 'dashboard'
@@ -30,210 +30,210 @@ type FetchKey =
   | 'settings'
   | 'notifications'
   | 'billing'
-  | 'account'
+  | 'account';
 
 interface StudioDataContextValue {
-  fetchDashboard: () => Promise<void>
-  fetchJobs: () => Promise<void>
-  fetchApplications: () => Promise<void>
-  fetchRecentSearches: () => Promise<void>
-  fetchProfile: () => Promise<void>
-  fetchPreparations: () => Promise<void>
-  fetchSettings: () => Promise<void>
-  fetchNotifications: () => Promise<void>
-  fetchBilling: () => Promise<void>
-  fetchAccount: () => Promise<void>
-  updateProfile: (data: unknown) => Promise<void>
-  updateSettings: (data: unknown) => Promise<void>
-  generateResume: (template?: string) => Promise<unknown>
-  createPreparation: (role: string, title?: string) => Promise<void>
-  answerQuestion: (preparationId: string, questionId: string, answer: string) => Promise<void>
-  markNotificationRead: (id: string) => Promise<void>
-  ensureAuth: () => Promise<boolean>
+  fetchDashboard: () => Promise<void>;
+  fetchJobs: () => Promise<void>;
+  fetchApplications: () => Promise<void>;
+  fetchRecentSearches: () => Promise<void>;
+  fetchProfile: () => Promise<void>;
+  fetchPreparations: () => Promise<void>;
+  fetchSettings: () => Promise<void>;
+  fetchNotifications: () => Promise<void>;
+  fetchBilling: () => Promise<void>;
+  fetchAccount: () => Promise<void>;
+  updateProfile: (data: unknown) => Promise<void>;
+  updateSettings: (data: unknown) => Promise<void>;
+  generateResume: (template?: string) => Promise<unknown>;
+  createPreparation: (role: string, title?: string) => Promise<void>;
+  answerQuestion: (preparationId: string, questionId: string, answer: string) => Promise<void>;
+  markNotificationRead: (id: string) => Promise<void>;
+  ensureAuth: () => Promise<boolean>;
 }
 
-const StudioDataContext = createContext<StudioDataContextValue | null>(null)
+const StudioDataContext = createContext<StudioDataContextValue | null>(null);
 
 export function StudioDataProvider({ children }: { children: ReactNode }) {
-  const dispatch = useAppDispatch()
-  const { getToken, isSignedIn } = useClerkAuth()
-  const tokenRef = useRef<string | null>(null)
+  const dispatch = useAppDispatch();
+  const { getToken, isSignedIn } = useClerkAuth();
+  const tokenRef = useRef<string | null>(null);
 
   const ensureAuth = useCallback(async () => {
-    if (!isSignedIn) return false
-    const token = await getToken()
-    if (!token) return false
+    if (!isSignedIn) return false;
+    const token = await getToken();
+    if (!token) return false;
     if (token !== tokenRef.current) {
-      tokenRef.current = token
-      setAuthToken(token)
+      tokenRef.current = token;
+      setAuthToken(token);
     }
-    return true
-  }, [getToken, isSignedIn])
+    return true;
+  }, [getToken, isSignedIn]);
 
   const withFetch = useCallback(
     async (key: FetchKey, fetcher: () => Promise<void>) => {
-      dispatch(setLoading({ key, value: true }))
-      dispatch(setError({ key, value: null }))
+      dispatch(setLoading({ key, value: true }));
+      dispatch(setError({ key, value: null }));
       try {
-        const authed = await ensureAuth()
+        const authed = await ensureAuth();
         if (!authed) {
-          dispatch(setError({ key, value: 'Not authenticated' }))
-          return
+          dispatch(setError({ key, value: 'Not authenticated' }));
+          return;
         }
-        await fetcher()
+        await fetcher();
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Request failed'
-        dispatch(setError({ key, value: message }))
+        const message = err instanceof Error ? err.message : 'Request failed';
+        dispatch(setError({ key, value: message }));
       } finally {
-        dispatch(setLoading({ key, value: false }))
+        dispatch(setLoading({ key, value: false }));
       }
     },
-    [dispatch, ensureAuth]
-  )
+    [dispatch, ensureAuth],
+  );
 
   const fetchDashboard = useCallback(
     () =>
       withFetch('dashboard', async () => {
-        const { data } = await studioApi.getDashboard()
-        dispatch(setDashboard(data))
+        const { data } = await studioApi.getDashboard();
+        dispatch(setDashboard(data));
       }),
-    [dispatch, withFetch]
-  )
+    [dispatch, withFetch],
+  );
 
   const fetchJobs = useCallback(
     () =>
       withFetch('jobs', async () => {
-        const { data } = await studioApi.getJobs()
-        dispatch(setJobs(data.jobs))
+        const { data } = await studioApi.getJobs();
+        dispatch(setJobs(data.jobs));
       }),
-    [dispatch, withFetch]
-  )
+    [dispatch, withFetch],
+  );
 
   const fetchApplications = useCallback(
     () =>
       withFetch('applications', async () => {
-        const { data } = await studioApi.getApplications()
-        dispatch(setApplications(data.applications))
+        const { data } = await studioApi.getApplications();
+        dispatch(setApplications(data.applications));
       }),
-    [dispatch, withFetch]
-  )
+    [dispatch, withFetch],
+  );
 
   const fetchRecentSearches = useCallback(
     () =>
       withFetch('recentSearches', async () => {
-        const { data } = await studioApi.getRecentSearches()
-        dispatch(setRecentSearches(data.searches))
+        const { data } = await studioApi.getRecentSearches();
+        dispatch(setRecentSearches(data.searches));
       }),
-    [dispatch, withFetch]
-  )
+    [dispatch, withFetch],
+  );
 
   const fetchProfile = useCallback(
     () =>
       withFetch('profile', async () => {
-        const { data } = await studioApi.getProfile()
-        dispatch(setProfile(data.profile))
+        const { data } = await studioApi.getProfile();
+        dispatch(setProfile(data.profile));
       }),
-    [dispatch, withFetch]
-  )
+    [dispatch, withFetch],
+  );
 
   const fetchPreparations = useCallback(
     () =>
       withFetch('preparations', async () => {
-        const { data } = await studioApi.getPreparations()
-        dispatch(setPreparations(data.preparations))
+        const { data } = await studioApi.getPreparations();
+        dispatch(setPreparations(data.preparations));
       }),
-    [dispatch, withFetch]
-  )
+    [dispatch, withFetch],
+  );
 
   const fetchSettings = useCallback(
     () =>
       withFetch('settings', async () => {
-        const { data } = await studioApi.getSettings()
-        dispatch(setSettings(data.settings))
+        const { data } = await studioApi.getSettings();
+        dispatch(setSettings(data.settings));
       }),
-    [dispatch, withFetch]
-  )
+    [dispatch, withFetch],
+  );
 
   const fetchNotifications = useCallback(
     () =>
       withFetch('notifications', async () => {
-        const { data } = await studioApi.getNotifications()
-        dispatch(setNotifications(data.notifications))
+        const { data } = await studioApi.getNotifications();
+        dispatch(setNotifications(data.notifications));
       }),
-    [dispatch, withFetch]
-  )
+    [dispatch, withFetch],
+  );
 
   const fetchBilling = useCallback(
     () =>
       withFetch('billing', async () => {
-        const { data } = await studioApi.getBilling()
-        dispatch(setBilling(data.billing))
+        const { data } = await studioApi.getBilling();
+        dispatch(setBilling(data.billing));
       }),
-    [dispatch, withFetch]
-  )
+    [dispatch, withFetch],
+  );
 
   const fetchAccount = useCallback(
     () =>
       withFetch('account', async () => {
-        const { data } = await studioApi.getAccount()
-        dispatch(setAccount(data.account))
+        const { data } = await studioApi.getAccount();
+        dispatch(setAccount(data.account));
       }),
-    [dispatch, withFetch]
-  )
+    [dispatch, withFetch],
+  );
 
   const updateProfile = useCallback(
     async (profileData: unknown) => {
-      await ensureAuth()
-      const { data } = await studioApi.updateProfile(profileData)
-      dispatch(setProfile(data.profile))
+      await ensureAuth();
+      const { data } = await studioApi.updateProfile(profileData);
+      dispatch(setProfile(data.profile));
     },
-    [dispatch, ensureAuth]
-  )
+    [dispatch, ensureAuth],
+  );
 
   const updateSettingsData = useCallback(
     async (settingsData: unknown) => {
-      await ensureAuth()
-      const { data } = await studioApi.updateSettings(settingsData)
-      dispatch(setSettings(data.settings))
+      await ensureAuth();
+      const { data } = await studioApi.updateSettings(settingsData);
+      dispatch(setSettings(data.settings));
     },
-    [dispatch, ensureAuth]
-  )
+    [dispatch, ensureAuth],
+  );
 
   const generateResume = useCallback(
     async (template?: string) => {
-      await ensureAuth()
-      return studioApi.generateResume(template)
+      await ensureAuth();
+      return studioApi.generateResume(template);
     },
-    [ensureAuth]
-  )
+    [ensureAuth],
+  );
 
   const createPreparation = useCallback(
     async (role: string, title?: string) => {
-      await ensureAuth()
-      await studioApi.createPreparation({ role, title })
-      await fetchPreparations()
+      await ensureAuth();
+      await studioApi.createPreparation({ role, title });
+      await fetchPreparations();
     },
-    [ensureAuth, fetchPreparations]
-  )
+    [ensureAuth, fetchPreparations],
+  );
 
   const answerQuestion = useCallback(
     async (preparationId: string, questionId: string, answer: string) => {
-      await ensureAuth()
-      await studioApi.answerQuestion({ preparationId, questionId, answer })
-      const { data: allData } = await studioApi.getPreparations()
-      dispatch(setPreparations(allData.preparations))
+      await ensureAuth();
+      await studioApi.answerQuestion({ preparationId, questionId, answer });
+      const { data: allData } = await studioApi.getPreparations();
+      dispatch(setPreparations(allData.preparations));
     },
-    [dispatch, ensureAuth]
-  )
+    [dispatch, ensureAuth],
+  );
 
   const markNotificationRead = useCallback(
     async (id: string) => {
-      await ensureAuth()
-      const { data } = await studioApi.markNotificationRead(id)
-      dispatch(updateNotification(data.notification))
+      await ensureAuth();
+      const { data } = await studioApi.markNotificationRead(id);
+      dispatch(updateNotification(data.notification));
     },
-    [dispatch, ensureAuth]
-  )
+    [dispatch, ensureAuth],
+  );
 
   const value = useMemo(
     () => ({
@@ -273,16 +273,14 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
       answerQuestion,
       markNotificationRead,
       ensureAuth,
-    ]
-  )
+    ],
+  );
 
-  return (
-    <StudioDataContext.Provider value={value}>{children}</StudioDataContext.Provider>
-  )
+  return <StudioDataContext.Provider value={value}>{children}</StudioDataContext.Provider>;
 }
 
 export function useStudioData() {
-  const context = useContext(StudioDataContext)
-  if (!context) throw new Error('useStudioData must be used within StudioDataProvider')
-  return context
+  const context = useContext(StudioDataContext);
+  if (!context) throw new Error('useStudioData must be used within StudioDataProvider');
+  return context;
 }

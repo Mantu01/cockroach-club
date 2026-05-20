@@ -1,17 +1,23 @@
-import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface PageShellProps {
-  title: string
-  description: string
-  ctaHref?: string
-  ctaText?: string
-  children: React.ReactNode
+  title: string;
+  description: string;
+  ctaHref?: string;
+  ctaText?: string;
+  children: React.ReactNode;
 }
 
-export default function PageShell({ title, description, ctaHref, ctaText, children }: PageShellProps) {
+export default function PageShell({
+  title,
+  description,
+  ctaHref,
+  ctaText,
+  children,
+}: PageShellProps) {
   return (
     <div className="min-h-[calc(100vh-220px)] flex items-center justify-center px-6 py-12">
       <Card className="w-full max-w-5xl border border-border/30 bg-background/95 shadow-xl">
@@ -39,5 +45,5 @@ export default function PageShell({ title, description, ctaHref, ctaText, childr
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

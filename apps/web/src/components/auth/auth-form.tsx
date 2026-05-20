@@ -1,41 +1,51 @@
-'use client'
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { HTMLInputTypeAttribute, useState } from "react";
-import { loginSchema, LoginSchemaType, signupSchema, SignupSchemaType } from "@/lib/validation";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
-import Logo from "../logo/logo";
-import Link from "next/link";
-import { InputOTPControlled } from "./otp";
-import SocialLogins from "./social-links";
-import { AuthProvider, useAuth } from "@/context/auth-context";
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { HTMLInputTypeAttribute, useState } from 'react';
+import { loginSchema, LoginSchemaType, signupSchema, SignupSchemaType } from '@/lib/validation';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import Logo from '../logo/logo';
+import Link from 'next/link';
+import { InputOTPControlled } from './otp';
+import SocialLogins from './social-links';
+import { AuthProvider, useAuth } from '@/context/auth-context';
 
 export interface InputFieldTypes {
-  name: keyof LoginSchemaType | keyof SignupSchemaType,
-  type: HTMLInputTypeAttribute,
-  placeholder: string,
-  label: string,
+  name: keyof LoginSchemaType | keyof SignupSchemaType;
+  type: HTMLInputTypeAttribute;
+  placeholder: string;
+  label: string;
 }
 
 interface AuthFormProps {
-  mode: 'login' | 'signup',
-  inputFields: InputFieldTypes[]
+  mode: 'login' | 'signup';
+  inputFields: InputFieldTypes[];
 }
 
 function FormInput({ mode, inputFields }: AuthFormProps) {
   const schema = mode === 'login' ? loginSchema : signupSchema;
-  
+
   const form = useForm<LoginSchemaType | SignupSchemaType>({
     resolver: zodResolver(schema),
-    defaultValues: mode === 'login' ? { email: '', password: '' }: { username: '', email: '' , password: '', confirmPassword: '' }
+    defaultValues:
+      mode === 'login'
+        ? { email: '', password: '' }
+        : { username: '', email: '', password: '', confirmPassword: '' },
   });
 
-  const {handleSubmit,isLoading,verificationPending,showError}=useAuth();
+  const { handleSubmit, isLoading, verificationPending, showError } = useAuth();
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
 
@@ -51,7 +61,7 @@ function FormInput({ mode, inputFields }: AuthFormProps) {
     <div className="min-h-screen w-full flex justify-center items-center p-4">
       {verificationPending && (
         <div className="absolute h-[120vh] w-full backdrop-blur-xl z-20">
-          <InputOTPControlled/>
+          <InputOTPControlled />
         </div>
       )}
       <Card className="w-full max-w-md shadow-lg rounded-xl overflow-hidden border-0">
@@ -64,14 +74,26 @@ function FormInput({ mode, inputFields }: AuthFormProps) {
               {mode === 'login' ? 'Welcome Back' : 'Create Account'}
             </CardTitle>
             <CardDescription className="text-base text-muted-foreground/80">
-              {mode === 'login' ? 'Enter your credentials to access your account' : 'Fill in the details to create your account'}
+              {mode === 'login'
+                ? 'Enter your credentials to access your account'
+                : 'Fill in the details to create your account'}
             </CardDescription>
           </div>
 
           {showError && (
             <div className="flex items-center gap-2 p-3 text-sm border border-destructive/20 bg-destructive/10 text-destructive rounded-lg">
-              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="h-4 w-4 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               <span>Email not found. Please Signup to create an account.</span>
             </div>
@@ -93,11 +115,15 @@ function FormInput({ mode, inputFields }: AuthFormProps) {
                           <Input
                             placeholder={field.placeholder}
                             type={
-                              field.name === 'password' 
-                                ? showPassword ? 'text' : 'password'
+                              field.name === 'password'
+                                ? showPassword
+                                  ? 'text'
+                                  : 'password'
                                 : field.name === 'confirmPassword'
-                                ? showConfirmPassword ? 'text' : 'password'
-                                : field.type
+                                  ? showConfirmPassword
+                                    ? 'text'
+                                    : 'password'
+                                  : field.type
                             }
                             {...formField}
                             className="pr-10"
@@ -136,40 +162,40 @@ function FormInput({ mode, inputFields }: AuthFormProps) {
                   )}
                 />
               ))}
-              <Button 
-                type="submit" 
-                className="w-full mt-2" 
-                disabled={isLoading}
-                size="lg"
-              >
+              <Button type="submit" className="w-full mt-2" disabled={isLoading} size="lg">
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Please wait
                   </>
-                ) : mode === 'login' ? 'Sign In' : 'Create Account'}
+                ) : mode === 'login' ? (
+                  'Sign In'
+                ) : (
+                  'Create Account'
+                )}
               </Button>
             </form>
           </Form>
-          <SocialLogins mode={mode} providers={['google','github']} />
+          <SocialLogins mode={mode} providers={['google', 'github']} />
         </CardContent>
         <CardFooter className="flex justify-center pt-4 border-t">
           <p className="text-sm text-muted-foreground">
-            {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
-            <Button 
-              variant="link" 
-              className="p-0 font-medium" 
-            >
-              {mode === 'login' ? (<Link href='/signup'>Sign Up</Link>):(<Link href='/login'>Login</Link>)}
+            {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+            <Button variant="link" className="p-0 font-medium">
+              {mode === 'login' ? (
+                <Link href="/signup">Sign Up</Link>
+              ) : (
+                <Link href="/login">Login</Link>
+              )}
             </Button>
           </p>
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }
 
-export default function AuthForm({ mode, inputFields }: AuthFormProps){
+export default function AuthForm({ mode, inputFields }: AuthFormProps) {
   return (
     <AuthProvider mode={mode}>
       <FormInput mode={mode} inputFields={inputFields} />

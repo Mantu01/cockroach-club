@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -7,13 +7,13 @@ import { useAuth } from '@/context/auth-context';
 
 interface SocialLoginsProps {
   providers?: Provider[];
-  mode: 'login' | 'signup',
+  mode: 'login' | 'signup';
 }
 
-
-export default function SocialLogins({ providers = ['google', 'github', 'x', 'facebook']}: SocialLoginsProps) {
-
-  const {loadingStates,handleSocialLogin}=useAuth();
+export default function SocialLogins({
+  providers = ['google', 'github', 'x', 'facebook'],
+}: SocialLoginsProps) {
+  const { loadingStates, handleSocialLogin } = useAuth();
 
   const getGridCols = () => {
     if (providers.length <= 2) return 'grid-cols-1 sm:grid-cols-2';
@@ -29,20 +29,18 @@ export default function SocialLogins({ providers = ['google', 'github', 'x', 'fa
           <Separator className="w-full" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            Or continue with
-          </span>
+          <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
         </div>
       </div>
-      
+
       <div className={`grid ${getGridCols()} gap-3`}>
         {providers.map((providerKey) => {
           const provider = socialProviders[providerKey];
           if (!provider) return null;
-          
+
           const IconComponent = provider.icon;
           const isProviderLoading = loadingStates[providerKey];
-          
+
           return (
             <Button
               key={providerKey}
@@ -58,20 +56,16 @@ export default function SocialLogins({ providers = ['google', 'github', 'x', 'fa
               ) : (
                 <IconComponent size={20} className="shrink-0" />
               )}
-              
-              <span className="font-medium text-sm truncate">
-                {provider.name}
-              </span>
+
+              <span className="font-medium text-sm truncate">{provider.name}</span>
             </Button>
           );
         })}
       </div>
-      
+
       {providers.length > 4 && (
         <div className="text-center">
-          <p className="text-xs text-muted-foreground">
-            Choose your preferred sign-in method
-          </p>
+          <p className="text-xs text-muted-foreground">Choose your preferred sign-in method</p>
         </div>
       )}
     </div>

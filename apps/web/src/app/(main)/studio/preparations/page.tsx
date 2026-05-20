@@ -1,66 +1,70 @@
-'use client'
+'use client';
 
-import { useEffect, useRef, useState } from 'react'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { StudioPageHeader } from '@/components/studio/studio-page-header'
-import { StudioLoader } from '@/components/studio/studio-loader'
-import { useStudioData } from '@/context/studio-data-context'
-import { useAppSelector } from '@/store/hooks'
-import { UI_SIZES } from '@/lib/constants/theme'
-import { toast } from 'sonner'
-import { Brain, CheckCircle2, Circle, Plus } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { StudioPageHeader } from '@/components/studio/studio-page-header';
+import { StudioLoader } from '@/components/studio/studio-loader';
+import { useStudioData } from '@/context/studio-data-context';
+import { useAppSelector } from '@/store/hooks';
+import { UI_SIZES } from '@/lib/constants/theme';
+import { toast } from 'sonner';
+import { Brain, CheckCircle2, Circle, Plus } from 'lucide-react';
 
 const DIFFICULTY_COLORS = {
   easy: '#4a7c59',
   medium: '#c4922a',
   hard: '#b5451b',
-}
+};
 
 export default function PreparationsPage() {
-  const { fetchPreparations, createPreparation, answerQuestion } = useStudioData()
-  const preparations = useAppSelector((s) => s.studio.preparations)
-  const loading = useAppSelector((s) => s.studio.loading.preparations)
-  const [role, setRole] = useState('')
-  const [activeAnswer, setActiveAnswer] = useState<{ prepId: string; qId: string; text: string } | null>(null)
-  const [creating, setCreating] = useState(false)
-  const fetched = useRef(false)
+  const { fetchPreparations, createPreparation, answerQuestion } = useStudioData();
+  const preparations = useAppSelector((s) => s.studio.preparations);
+  const loading = useAppSelector((s) => s.studio.loading.preparations);
+  const [role, setRole] = useState('');
+  const [activeAnswer, setActiveAnswer] = useState<{
+    prepId: string;
+    qId: string;
+    text: string;
+  } | null>(null);
+  const [creating, setCreating] = useState(false);
+  const fetched = useRef(false);
 
   useEffect(() => {
-    if (fetched.current) return
-    fetched.current = true
-    void fetchPreparations()
-  }, [fetchPreparations])
+    if (fetched.current) return;
+    fetched.current = true;
+    void fetchPreparations();
+  }, [fetchPreparations]);
 
   const handleCreate = async () => {
-    if (!role.trim()) return
-    setCreating(true)
+    if (!role.trim()) return;
+    setCreating(true);
     try {
-      await createPreparation(role.trim())
-      setRole('')
-      toast.success('AI interview prep session created')
+      await createPreparation(role.trim());
+      setRole('');
+      toast.success('AI interview prep session created');
     } catch {
-      toast.error('Failed to create prep session')
+      toast.error('Failed to create prep session');
     } finally {
-      setCreating(false)
+      setCreating(false);
     }
-  }
+  };
 
   const handleAnswer = async () => {
-    if (!activeAnswer) return
+    if (!activeAnswer) return;
     try {
-      await answerQuestion(activeAnswer.prepId, activeAnswer.qId, activeAnswer.text)
-      setActiveAnswer(null)
-      toast.success('Answer saved')
+      await answerQuestion(activeAnswer.prepId, activeAnswer.qId, activeAnswer.text);
+      setActiveAnswer(null);
+      toast.success('Answer saved');
     } catch {
-      toast.error('Failed to save answer')
+      toast.error('Failed to save answer');
     }
-  }
+  };
 
-  if (loading && preparations.length === 0) return <StudioLoader rows={6} />
+  if (loading && preparations.length === 0) return <StudioLoader rows={6} />;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -75,7 +79,12 @@ export default function PreparationsPage() {
               value={role}
               onChange={(e) => setRole(e.target.value)}
             />
-            <Button size="sm" className="h-7 text-[10px]" onClick={handleCreate} disabled={creating || !role.trim()}>
+            <Button
+              size="sm"
+              className="h-7 text-[10px]"
+              onClick={handleCreate}
+              disabled={creating || !role.trim()}
+            >
               <Plus className="size-3 mr-1" />
               New Session
             </Button>
@@ -97,7 +106,10 @@ export default function PreparationsPage() {
             </CardHeader>
             <CardContent className="flex flex-col gap-2 px-4 pb-4">
               {prep.questions.map((q) => (
-                <div key={q._id} className="flex flex-col gap-2 border-b border-border/20 pb-3 last:border-0 last:pb-0">
+                <div
+                  key={q._id}
+                  className="flex flex-col gap-2 border-b border-border/20 pb-3 last:border-0 last:pb-0"
+                >
                   <div className="flex items-start gap-2">
                     {q.answered ? (
                       <CheckCircle2 className="size-3.5 shrink-0 text-[#4a7c59] mt-0.5" />
@@ -107,11 +119,16 @@ export default function PreparationsPage() {
                     <div className="flex flex-col gap-1 flex-1">
                       <p className="text-xs">{q.question}</p>
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-[9px]">{q.category}</Badge>
+                        <Badge variant="secondary" className="text-[9px]">
+                          {q.category}
+                        </Badge>
                         <Badge
                           variant="outline"
                           className="text-[9px] capitalize"
-                          style={{ color: DIFFICULTY_COLORS[q.difficulty], borderColor: DIFFICULTY_COLORS[q.difficulty] }}
+                          style={{
+                            color: DIFFICULTY_COLORS[q.difficulty],
+                            borderColor: DIFFICULTY_COLORS[q.difficulty],
+                          }}
                         >
                           {q.difficulty}
                         </Badge>
@@ -121,18 +138,29 @@ export default function PreparationsPage() {
                       )}
                     </div>
                   </div>
-                  {!q.answered && (
-                    activeAnswer?.qId === q._id ? (
+                  {!q.answered &&
+                    (activeAnswer?.qId === q._id ? (
                       <div className="flex flex-col gap-2 ml-5">
                         <Textarea
                           className="text-xs min-h-16"
                           value={activeAnswer.text}
-                          onChange={(e) => setActiveAnswer({ ...activeAnswer, text: e.target.value })}
+                          onChange={(e) =>
+                            setActiveAnswer({ ...activeAnswer, text: e.target.value })
+                          }
                           placeholder="Type your answer…"
                         />
                         <div className="flex gap-2">
-                          <Button size="sm" className="h-7 text-[10px]" onClick={handleAnswer}>Submit</Button>
-                          <Button size="sm" variant="ghost" className="h-7 text-[10px]" onClick={() => setActiveAnswer(null)}>Cancel</Button>
+                          <Button size="sm" className="h-7 text-[10px]" onClick={handleAnswer}>
+                            Submit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-[10px]"
+                            onClick={() => setActiveAnswer(null)}
+                          >
+                            Cancel
+                          </Button>
                         </div>
                       </div>
                     ) : (
@@ -144,8 +172,7 @@ export default function PreparationsPage() {
                       >
                         Practice Answer
                       </Button>
-                    )
-                  )}
+                    ))}
                 </div>
               ))}
             </CardContent>
@@ -153,5 +180,5 @@ export default function PreparationsPage() {
         ))}
       </div>
     </div>
-  )
+  );
 }

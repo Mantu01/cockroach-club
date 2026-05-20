@@ -1,55 +1,49 @@
-'use client'
+'use client';
 
-import { useEffect, useRef } from 'react'
-import Link from 'next/link'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { StudioLoader } from '@/components/studio/studio-loader'
-import StoreProvider from '@/providers/store-provider'
-import { StudioDataProvider, useStudioData } from '@/context/studio-data-context'
-import { useAppSelector } from '@/store/hooks'
-import { UI_SIZES } from '@/lib/constants/theme'
-import { ROUTES } from '@/lib/constants/app'
-import { ArrowLeft, Bell } from 'lucide-react'
+import { useEffect, useRef } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { StudioLoader } from '@/components/studio/studio-loader';
+import { useStudioData } from '@/context/studio-data-context';
+import { useAppSelector } from '@/store/hooks';
+import { UI_SIZES } from '@/lib/constants/theme';
+import { Bell } from 'lucide-react';
 
 const TYPE_COLORS: Record<string, string> = {
   job: '#4a7c59',
   application: '#1a6b8a',
   system: '#c4922a',
   billing: '#b5451b',
-}
+};
 
 function NotificationsContent() {
-  const { fetchNotifications, markNotificationRead } = useStudioData()
-  const notifications = useAppSelector((s) => s.studio.notifications)
-  const loading = useAppSelector((s) => s.studio.loading.notifications)
-  const fetched = useRef(false)
+  const { fetchNotifications, markNotificationRead } = useStudioData();
+  const notifications = useAppSelector((s) => s.studio.notifications);
+  const loading = useAppSelector((s) => s.studio.loading.notifications);
+  const fetched = useRef(false);
 
   useEffect(() => {
-    if (fetched.current) return
-    fetched.current = true
-    void fetchNotifications()
-  }, [fetchNotifications])
+    if (fetched.current) return;
+    fetched.current = true;
+    void fetchNotifications();
+  }, [fetchNotifications]);
 
-  const unread = notifications.filter((n) => !n.read).length
+  const unread = notifications.filter((n) => !n.read).length;
 
-  if (loading && notifications.length === 0) return <StudioLoader rows={4} />
+  if (loading && notifications.length === 0) return <StudioLoader rows={4} />;
 
   return (
     <div className="min-h-[calc(100vh-220px)] px-4 py-6 lg:px-8">
       <div className="mx-auto max-w-2xl flex flex-col gap-4">
-        <Button variant="ghost" size="sm" className="h-7 text-[10px] w-fit" asChild>
-          <Link href={ROUTES.settings}>
-            <ArrowLeft className="size-3 mr-1" />
-            Back to Settings
-          </Link>
-        </Button>
-
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-1">
-            <h1 className={UI_SIZES.pageTitle} style={{ fontFamily: "'Syne', sans-serif" }}>Notifications</h1>
-            <p className={UI_SIZES.pageSubtitle}>Stay updated on jobs, applications, and account activity.</p>
+            <h1 className={UI_SIZES.pageTitle} style={{ fontFamily: "'Syne', sans-serif" }}>
+              Notifications
+            </h1>
+            <p className={UI_SIZES.pageSubtitle}>
+              Stay updated on jobs, applications, and account activity.
+            </p>
           </div>
           {unread > 0 && (
             <Badge variant="outline" className={UI_SIZES.badge}>
@@ -98,15 +92,9 @@ function NotificationsContent() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default function NotificationsPage() {
-  return (
-    <StoreProvider>
-      <StudioDataProvider>
-        <NotificationsContent />
-      </StudioDataProvider>
-    </StoreProvider>
-  )
+  return <NotificationsContent />;
 }

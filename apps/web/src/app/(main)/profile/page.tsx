@@ -1,40 +1,40 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useUser, useAuth as useClerkAuth } from '@clerk/nextjs'
-import PageShell from '@/components/layout/page-shell'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
+import { useEffect, useState } from 'react';
+import { useUser, useAuth as useClerkAuth } from '@clerk/nextjs';
+import PageShell from '@/components/layout/page-shell';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface DbUser {
-  id: string
-  email: string
-  credits: number
-  Tcredits: number
-  createdAt: string
-  updatedAt: string
+  id: string;
+  email: string;
+  credits: number;
+  Tcredits: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function ProfilePage() {
-  const { user, isLoaded } = useUser()
-  const { getToken } = useClerkAuth()
-  const [dbUser, setDbUser] = useState<DbUser | null>(null)
-  const [loadingDb, setLoadingDb] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const userStatus = user ? (user as any).status : 'Unknown'
+  const { user, isLoaded } = useUser();
+  const { getToken } = useClerkAuth();
+  const [dbUser, setDbUser] = useState<DbUser | null>(null);
+  const [loadingDb, setLoadingDb] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const userStatus = user ? (user as any).status : 'Unknown';
 
   useEffect(() => {
-    if (!isLoaded || !user?.id) return
+    if (!isLoaded || !user?.id) return;
 
     const fetchProfile = async () => {
-      setLoadingDb(true)
-      setError(null)
+      setLoadingDb(true);
+      setError(null);
 
       try {
-        const token = await getToken()
+        const token = await getToken();
         if (!token) {
-          throw new Error('Unable to get Clerk session token')
+          throw new Error('Unable to get Clerk session token');
         }
 
         const response = await fetch('/api/profile', {
@@ -42,24 +42,24 @@ export default function ProfilePage() {
             Authorization: `Bearer ${token}`,
           },
           cache: 'no-store',
-        })
+        });
 
         if (!response.ok) {
-          const errorText = await response.text()
-          throw new Error(errorText || 'Unable to load database record')
+          const errorText = await response.text();
+          throw new Error(errorText || 'Unable to load database record');
         }
 
-        const data = await response.json()
-        setDbUser(data.user ?? null)
+        const data = await response.json();
+        setDbUser(data.user ?? null);
       } catch (err) {
-        setError((err as Error).message)
+        setError((err as Error).message);
       } finally {
-        setLoadingDb(false)
+        setLoadingDb(false);
       }
-    }
+    };
 
-    fetchProfile()
-  }, [isLoaded, user, getToken])
+    fetchProfile();
+  }, [isLoaded, user, getToken]);
 
   return (
     <PageShell
@@ -82,7 +82,9 @@ export default function ProfilePage() {
                 </p>
                 <p>
                   <span className="font-medium text-foreground">Email:</span>{' '}
-                  {user?.primaryEmailAddress?.emailAddress ?? user?.emailAddresses?.[0]?.emailAddress ?? 'Not set'}
+                  {user?.primaryEmailAddress?.emailAddress ??
+                    user?.emailAddresses?.[0]?.emailAddress ??
+                    'Not set'}
                 </p>
                 <p>
                   <span className="font-medium text-foreground">ID:</span> {user?.id ?? 'Not set'}
@@ -112,7 +114,8 @@ export default function ProfilePage() {
                     <span className="font-medium text-foreground">Credits:</span> {dbUser.credits}
                   </p>
                   <p>
-                    <span className="font-medium text-foreground">Total Credits:</span> {dbUser.Tcredits}
+                    <span className="font-medium text-foreground">Total Credits:</span>{' '}
+                    {dbUser.Tcredits}
                   </p>
                   <p>
                     <span className="font-medium text-foreground">Created:</span>{' '}
@@ -120,7 +123,9 @@ export default function ProfilePage() {
                   </p>
                 </div>
               ) : (
-                <p className="text-muted-foreground">No database record found for this Clerk user.</p>
+                <p className="text-muted-foreground">
+                  No database record found for this Clerk user.
+                </p>
               )}
             </CardContent>
           </Card>
@@ -132,5 +137,5 @@ export default function ProfilePage() {
         </Button>
       </div>
     </PageShell>
-  )
+  );
 }

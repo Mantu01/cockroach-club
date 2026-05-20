@@ -1,13 +1,13 @@
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 const footerLinks = [
   { label: 'About', href: '/about' },
   { label: 'Terms', href: '/terms' },
   { label: 'Privacy', href: '/privacy-policy' },
-  { label: 'Dashboard', href: '/dashboard' },
+  { label: 'Dashboard', href: '/studio/dashboard' },
   { label: 'Profile', href: '/profile' },
-]
+];
 
 export default function Footer() {
   return (
@@ -16,7 +16,8 @@ export default function Footer() {
         <div className="space-y-2">
           <p className="text-base font-semibold text-foreground">Cockroach Club</p>
           <p className="max-w-xl text-sm leading-relaxed text-muted-foreground/90">
-            A resilient experience built to keep your application strong, simple, and consistent from auth to profile.
+            A resilient experience built to keep your application strong, simple, and consistent
+            from auth to profile.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -31,5 +32,5 @@ export default function Footer() {
         © {new Date().getFullYear()} Cockroach Club. Built for durable paths and clean auth.
       </div>
     </footer>
-  )
+  );
 }

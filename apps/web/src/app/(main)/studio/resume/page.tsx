@@ -1,64 +1,70 @@
-'use client'
+'use client';
 
-import { useEffect, useRef, useState } from 'react'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
-import { StudioPageHeader } from '@/components/studio/studio-page-header'
-import { useStudioData } from '@/context/studio-data-context'
-import { UI_SIZES } from '@/lib/constants/theme'
-import { toast } from 'sonner'
-import { Download, FileText, Sparkles } from 'lucide-react'
-import { studioApi } from '@/lib/api'
+import { useEffect, useRef, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { StudioPageHeader } from '@/components/studio/studio-page-header';
+import { useStudioData } from '@/context/studio-data-context';
+import { UI_SIZES } from '@/lib/constants/theme';
+import { toast } from 'sonner';
+import { Download, FileText, Sparkles } from 'lucide-react';
+import { studioApi } from '@/lib/api';
 
 export default function ResumePage() {
-  const { generateResume, ensureAuth } = useStudioData()
-  const [latex, setLatex] = useState('')
-  const [template, setTemplate] = useState('modern')
-  const [generating, setGenerating] = useState(false)
-  const fetched = useRef(false)
+  const { generateResume, ensureAuth } = useStudioData();
+  const [latex, setLatex] = useState('');
+  const [template, setTemplate] = useState('modern');
+  const [generating, setGenerating] = useState(false);
+  const fetched = useRef(false);
 
   useEffect(() => {
-    if (fetched.current) return
-    fetched.current = true
+    if (fetched.current) return;
+    fetched.current = true;
     void (async () => {
-      const authed = await ensureAuth()
-      if (!authed) return
+      const authed = await ensureAuth();
+      if (!authed) return;
       try {
-        const { data } = await studioApi.getResume()
-        if (data.resume?.latex) setLatex(data.resume.latex)
-        if (data.resume?.template) setTemplate(data.resume.template)
+        const { data } = await studioApi.getResume();
+        if (data.resume?.latex) setLatex(data.resume.latex);
+        if (data.resume?.template) setTemplate(data.resume.template);
       } catch {
-        toast.error('Failed to load resume')
+        toast.error('Failed to load resume');
       }
-    })()
-  }, [ensureAuth])
+    })();
+  }, [ensureAuth]);
 
   const handleGenerate = async () => {
-    setGenerating(true)
+    setGenerating(true);
     try {
-      const response = await generateResume(template) as { data: { resume: { latex: string } } }
-      setLatex(response.data.resume.latex)
-      toast.success('Resume generated from profile data')
+      const response = (await generateResume(template)) as { data: { resume: { latex: string } } };
+      setLatex(response.data.resume.latex);
+      toast.success('Resume generated from profile data');
     } catch {
-      toast.error('Failed to generate resume')
+      toast.error('Failed to generate resume');
     } finally {
-      setGenerating(false)
+      setGenerating(false);
     }
-  }
+  };
 
   const handleDownload = () => {
-    const blob = new Blob([latex], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'resume.tex'
-    a.click()
-    URL.revokeObjectURL(url)
-    toast.success('LaTeX file downloaded — compile to PDF with your LaTeX editor')
-  }
+    const blob = new Blob([latex], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'resume.tex';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('LaTeX file downloaded — compile to PDF with your LaTeX editor');
+  };
 
   return (
     <div className="flex flex-1 flex-col">
@@ -72,12 +78,23 @@ export default function ResumePage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="modern" className="text-xs">Modern</SelectItem>
-                <SelectItem value="classic" className="text-xs">Classic</SelectItem>
-                <SelectItem value="minimal" className="text-xs">Minimal</SelectItem>
+                <SelectItem value="modern" className="text-xs">
+                  Modern
+                </SelectItem>
+                <SelectItem value="classic" className="text-xs">
+                  Classic
+                </SelectItem>
+                <SelectItem value="minimal" className="text-xs">
+                  Minimal
+                </SelectItem>
               </SelectContent>
             </Select>
-            <Button size="sm" className="h-7 text-[10px]" onClick={handleGenerate} disabled={generating}>
+            <Button
+              size="sm"
+              className="h-7 text-[10px]"
+              onClick={handleGenerate}
+              disabled={generating}
+            >
               <Sparkles className="size-3 mr-1" />
               {generating ? 'Generating…' : 'Generate'}
             </Button>
@@ -109,12 +126,19 @@ export default function ResumePage() {
               <span className={UI_SIZES.sectionLabel}>Export</span>
             </CardHeader>
             <CardContent className="flex flex-col gap-2 px-4 pb-4">
-              <Button variant="outline" size="sm" className="h-8 text-[10px] justify-start" onClick={handleDownload} disabled={!latex}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-[10px] justify-start"
+                onClick={handleDownload}
+                disabled={!latex}
+              >
                 <Download className="size-3 mr-2" />
                 Download .tex file
               </Button>
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Compile the LaTeX source with pdflatex or an online editor like Overleaf to produce your PDF resume.
+                Compile the LaTeX source with pdflatex or an online editor like Overleaf to produce
+                your PDF resume.
               </p>
             </CardContent>
           </Card>
@@ -132,5 +156,5 @@ export default function ResumePage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

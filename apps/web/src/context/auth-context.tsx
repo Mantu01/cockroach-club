@@ -1,65 +1,70 @@
-'use client'
+'use client';
 
-import { LoginSchemaType, SignupSchemaType } from "@/lib/validation";
-import { useSignIn, useSignUp } from "@clerk/nextjs/legacy";
-import { useRouter } from "next/navigation";
-import { createContext, ReactNode, useContext, useState } from "react";
-import Loader from '@/components/ui/loader'
-import { toast } from "sonner";
-import { Provider } from "@/lib/constants/social-icons";
+import { LoginSchemaType, SignupSchemaType } from '@/lib/validation';
+import { useSignIn, useSignUp } from '@clerk/nextjs/legacy';
+import { useRouter } from 'next/navigation';
+import { createContext, ReactNode, useContext, useState } from 'react';
+import Loader from '@/components/ui/loader';
+import { toast } from 'sonner';
+import { Provider } from '@/lib/constants/social-icons';
 
-interface AuthContext{
-  isLoading:boolean,
-  verificationPending:boolean,
-  showError:boolean,
-  handleSubmit:(data: LoginSchemaType | SignupSchemaType)=>void,
+interface AuthContext {
+  isLoading: boolean;
+  verificationPending: boolean;
+  showError: boolean;
+  handleSubmit: (data: LoginSchemaType | SignupSchemaType) => void;
 
-  loadingStates:Record<string, boolean>,
-  handleSocialLogin: (provider: Provider) => void,
+  loadingStates: Record<string, boolean>;
+  handleSocialLogin: (provider: Provider) => void;
 }
 
-const AuthContext=createContext<AuthContext | undefined>(undefined);
+const AuthContext = createContext<AuthContext | undefined>(undefined);
 
-export const AuthProvider=({children,mode}:{children:ReactNode,mode:'login' | 'signup'})=>{
-
+export const AuthProvider = ({
+  children,
+  mode,
+}: {
+  children: ReactNode;
+  mode: 'login' | 'signup';
+}) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [verificationPending,setVerificationPending]=useState<boolean>(false);
-  const {isLoaded: isSignInLoaded,signIn,setActive} = useSignIn();
-  const {isLoaded: isSignUpLoaded,signUp} = useSignUp();
+  const [verificationPending, setVerificationPending] = useState<boolean>(false);
+  const { isLoaded: isSignInLoaded, signIn, setActive } = useSignIn();
+  const { isLoaded: isSignUpLoaded, signUp } = useSignUp();
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
 
-  const router=useRouter();
+  const router = useRouter();
 
   const handleSocialLogin = async (provider: Provider) => {
-    setLoadingStates(prev => ({ ...prev, [provider]: true }));
+    setLoadingStates((prev) => ({ ...prev, [provider]: true }));
     try {
       if (mode === 'login') {
         if (!isSignInLoaded) {
-          toast.error("Login is not ready yet.");
+          toast.error('Login is not ready yet.');
           return;
         }
         await signIn.authenticateWithRedirect({
           strategy: `oauth_${provider}`,
           redirectUrl: '/login',
-          redirectUrlComplete: '/dashboard',
+          redirectUrlComplete: '/studio',
         });
-        toast.success("Redirecting to login...");
+        toast.success('Redirecting to login...');
       } else {
         if (!isSignUpLoaded) {
-          toast.error("Signup is not ready yet.");
+          toast.error('Signup is not ready yet.');
           return;
         }
         await signUp.authenticateWithRedirect({
           strategy: `oauth_${provider}`,
           redirectUrl: '/signup/continue',
-          redirectUrlComplete: '/dashboard',
+          redirectUrlComplete: '/studio',
         });
-        toast.success("Redirecting to signup...");
+        toast.success('Redirecting to signup...');
       }
-    } catch{
-      toast.error("Something went wrong during authentication.");
+    } catch {
+      toast.error('Something went wrong during authentication.');
     } finally {
-      setLoadingStates(prev => ({ ...prev, [provider]: false }));
+      setLoadingStates((prev) => ({ ...prev, [provider]: false }));
     }
   };
 
@@ -67,67 +72,69 @@ export const AuthProvider=({children,mode}:{children:ReactNode,mode:'login' | 's
     setIsLoading(true);
     try {
       if (mode === 'login') {
-        if(!isSignInLoaded){
-          toast.error("Login is not ready yet.");
+        if (!isSignInLoaded) {
+          toast.error('Login is not ready yet.');
           return;
         }
-        const loginData=data as LoginSchemaType;
-        const loginAttempt=await signIn.create({
-          identifier:loginData.email,
-          password:loginData.password
+        const loginData = data as LoginSchemaType;
+        const loginAttempt = await signIn.create({
+          identifier: loginData.email,
+          password: loginData.password,
         });
-        if(loginAttempt.status==='complete'){
+        if (loginAttempt.status === 'complete') {
           await setActive({
-            session:loginAttempt.createdSessionId,
+            session: loginAttempt.createdSessionId,
           });
           toast.success('Logged In successful');
-          setTimeout(()=>router.push('/'),300);
+          setTimeout(() => router.push('/'), 300);
         }
       } else {
-        if(!isSignUpLoaded){
-          toast.error("Signup is not ready yet.");
+        if (!isSignUpLoaded) {
+          toast.error('Signup is not ready yet.');
           return;
         }
-        const signupData=data as SignupSchemaType;
+        const signupData = data as SignupSchemaType;
         await signUp.create({
-          username:signupData.username,
-          emailAddress:signupData.email,
-          password:signupData.password,
+          username: signupData.username,
+          emailAddress: signupData.email,
+          password: signupData.password,
         });
 
         await signUp.prepareEmailAddressVerification({
-          strategy:'email_code'
+          strategy: 'email_code',
         });
         setVerificationPending(true);
       }
-    } catch (err:unknown) {
+    } catch (err: unknown) {
       const error = err as { errors?: Array<{ message: string }>; message?: string };
-      toast.error(error.errors?.[0]?.message ?? error.message ?? "Something went wrong.");
+      toast.error(error.errors?.[0]?.message ?? error.message ?? 'Something went wrong.');
     } finally {
       setIsLoading(false);
     }
   }
 
-  if(!isSignInLoaded || !isSignUpLoaded){
-    return <Loader/>
+  if (!isSignInLoaded || !isSignUpLoaded) {
+    return <Loader />;
   }
 
   return (
-    <AuthContext.Provider value={{
-      handleSubmit,
-      isLoading,
-      verificationPending,
-      showError: false,
-      handleSocialLogin,
-      loadingStates
-    }}>
+    <AuthContext.Provider
+      value={{
+        handleSubmit,
+        isLoading,
+        verificationPending,
+        showError: false,
+        handleSocialLogin,
+        loadingStates,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export function useAuth(){
-  const context=useContext(AuthContext);
-   if (!context) throw new Error("useAuth must be used within AuthProvider");
-  return context
-};
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  return context;
+}

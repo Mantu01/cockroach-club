@@ -1,10 +1,10 @@
-'use client'
+'use client';
 
-import { FeatureCard } from '@/components/studio/feature-card'
-import { StudioPageHeader } from '@/components/studio/studio-page-header'
-import { STUDIO_FEATURES } from '@/lib/constants/navigation'
-import { Badge } from '@/components/ui/badge'
-import { UI_SIZES } from '@/lib/constants/theme'
+import { FeatureCard } from '@/components/studio/feature-card';
+import { StudioPageHeader } from '@/components/studio/studio-page-header';
+import { STUDIO_FEATURES } from '@/lib/constants/navigation';
+import { Badge } from '@/components/ui/badge';
+import { UI_SIZES } from '@/lib/constants/theme';
 
 export default function StudioPage() {
   return (
@@ -26,5 +26,5 @@ export default function StudioPage() {
         ))}
       </div>
     </div>
-  )
+  );
 }

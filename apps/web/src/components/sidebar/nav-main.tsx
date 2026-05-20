@@ -1,21 +1,21 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Button } from '@/components/ui/button'
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@/components/ui/sidebar'
-import { CirclePlusIcon } from 'lucide-react'
-import { MAIN_NAV } from '@/lib/constants/navigation'
-import { ROUTES } from '@/lib/constants/app'
+} from '@/components/ui/sidebar';
+import { CirclePlusIcon } from 'lucide-react';
+import { MAIN_NAV } from '@/lib/constants/navigation';
+import { ROUTES } from '@/lib/constants/app';
 
 export function NavMain() {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   return (
     <SidebarGroup>
@@ -36,8 +36,8 @@ export function NavMain() {
         </SidebarMenu>
         <SidebarMenu>
           {MAIN_NAV.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.url || pathname.startsWith(`${item.url}/`)
+            const Icon = item.icon;
+            const isActive = pathname === item.url || pathname.startsWith(`${item.url}/`);
             return (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton tooltip={item.title} isActive={isActive} asChild>
@@ -47,10 +47,10 @@ export function NavMain() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            )
+            );
           })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
-  )
+  );
 }

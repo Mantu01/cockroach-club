@@ -1,16 +1,16 @@
-'use client'
+'use client';
 
-import { use } from 'react'
+import { use } from 'react';
 
 interface DataFetcherProps {
-  fetchPromise: Promise<void>
-  children: React.ReactNode
-  fallback?: React.ReactNode
+  fetchPromise: Promise<void>;
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
 }
 
 export function DataFetcher({ fetchPromise, children, fallback }: DataFetcherProps) {
-  use(fetchPromise)
-  return <>{children}</>
+  use(fetchPromise);
+  return <>{children}</>;
 }
 
 export function ClientDataGate({
@@ -18,13 +18,13 @@ export function ClientDataGate({
   fallback,
   children,
 }: {
-  promise: Promise<void>
-  fallback?: React.ReactNode
-  children: React.ReactNode
+  promise: Promise<void>;
+  fallback?: React.ReactNode;
+  children: React.ReactNode;
 }) {
   return (
     <DataFetcher fetchPromise={promise} fallback={fallback}>
       {children}
     </DataFetcher>
-  )
+  );
 }

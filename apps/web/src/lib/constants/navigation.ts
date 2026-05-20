@@ -12,19 +12,19 @@ import {
   Target,
   Users,
   type LucideIcon,
-} from 'lucide-react'
-import { ROUTES } from './app'
+} from 'lucide-react';
+import { ROUTES } from './app';
 
 export interface NavItem {
-  title: string
-  url: string
-  icon: LucideIcon
+  title: string;
+  url: string;
+  icon: LucideIcon;
 }
 
 export interface UpcomingFeature {
-  name: string
-  description: string
-  icon: LucideIcon
+  name: string;
+  description: string;
+  icon: LucideIcon;
 }
 
 export const MAIN_NAV: NavItem[] = [
@@ -33,7 +33,7 @@ export const MAIN_NAV: NavItem[] = [
   { title: 'Applications', url: ROUTES.applications, icon: FileStack },
   { title: 'Resume', url: ROUTES.resume, icon: FileText },
   { title: 'Preparations', url: ROUTES.preparations, icon: GraduationCap },
-]
+];
 
 export const UPCOMING_FEATURES: UpcomingFeature[] = [
   { name: 'Cold Mailing', description: 'Automated outreach to hiring managers', icon: Mail },
@@ -43,7 +43,7 @@ export const UPCOMING_FEATURES: UpcomingFeature[] = [
   { name: 'AI Cover Letters', description: 'Tailored letters per application', icon: Sparkles },
   { name: 'Referral Engine', description: 'Connect with employees for referrals', icon: Users },
   { name: 'Career Coach', description: 'Personalized growth recommendations', icon: Brain },
-]
+];
 
 export const STUDIO_FEATURES = [
   {
@@ -96,7 +96,7 @@ export const STUDIO_FEATURES = [
   },
   {
     label: 'Interview Prep',
-    title: 'Answers they\nwon\'t expect.',
+    title: "Answers they\nwon't expect.",
     desc: 'Practice with AI-generated questions tailored to your target role.',
     href: ROUTES.preparations,
     cta: 'Start Prep',
@@ -110,7 +110,7 @@ export const STUDIO_FEATURES = [
     cta: 'Open Settings',
     accent: '#1a6b8a',
   },
-]
+];
 
 export const PAGE_TITLES: Record<string, string> = {
   [ROUTES.studio]: 'Studio',
@@ -124,4 +124,6 @@ export const PAGE_TITLES: Record<string, string> = {
   [ROUTES.account]: 'Account',
   [ROUTES.billing]: 'Billing',
   [ROUTES.notifications]: 'Notifications',
-}
+  [ROUTES.contact]: 'Contact Us',
+};
+

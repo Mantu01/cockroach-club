@@ -1,9 +1,9 @@
-'use client'
+'use client';
 
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface StudioLoaderProps {
-  rows?: number
+  rows?: number;
 }
 
 export function StudioLoader({ rows = 4 }: StudioLoaderProps) {
@@ -13,5 +13,5 @@ export function StudioLoader({ rows = 4 }: StudioLoaderProps) {
         <Skeleton key={i} className="h-16 w-full rounded-lg" />
       ))}
     </div>
-  )
+  );
 }

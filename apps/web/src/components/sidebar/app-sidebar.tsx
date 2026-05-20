@@ -1,10 +1,10 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { NavMain } from '@/components/sidebar/nav-main'
-import { NavRecentSearches } from '@/components/sidebar/nav-recent-searches'
-import { NavUpcoming } from '@/components/sidebar/nav-upcoming'
-import { NavUser } from '@/components/sidebar/nav-user'
+import Link from 'next/link';
+import { NavMain } from '@/components/sidebar/nav-main';
+import { NavRecentSearches } from '@/components/sidebar/nav-recent-searches';
+import { NavUpcoming } from '@/components/sidebar/nav-upcoming';
+import { NavUser } from '@/components/sidebar/nav-user';
 import {
   Sidebar,
   SidebarContent,
@@ -13,9 +13,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@/components/ui/sidebar'
-import { Flame } from 'lucide-react'
-import { APP_NAME, ROUTES } from '@/lib/constants/app'
+} from '@/components/ui/sidebar';
+import { Flame } from 'lucide-react';
+import { APP_NAME, ROUTES } from '@/lib/constants/app';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -46,5 +46,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavUser />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

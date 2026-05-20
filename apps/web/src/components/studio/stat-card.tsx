@@ -1,20 +1,20 @@
-'use client'
+'use client';
 
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { UI_SIZES } from '@/lib/constants/theme'
-import { TrendingDown, TrendingUp, Minus } from 'lucide-react'
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { UI_SIZES } from '@/lib/constants/theme';
+import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
 
 interface StatCardProps {
-  label: string
-  value: string | number
-  change?: string
-  trend?: 'up' | 'down' | 'stable'
-  hint?: string
+  label: string;
+  value: string | number;
+  change?: string;
+  trend?: 'up' | 'down' | 'stable';
+  hint?: string;
 }
 
 export function StatCard({ label, value, change, trend, hint }: StatCardProps) {
-  const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus
+  const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
 
   return (
     <Card className="border border-border/40 bg-muted/5">
@@ -28,11 +28,14 @@ export function StatCard({ label, value, change, trend, hint }: StatCardProps) {
         )}
       </CardHeader>
       <CardContent className="px-4 pb-3">
-        <p className={`${UI_SIZES.cardValue} tracking-tight`} style={{ fontFamily: "'Syne', sans-serif" }}>
+        <p
+          className={`${UI_SIZES.cardValue} tracking-tight`}
+          style={{ fontFamily: "'Syne', sans-serif" }}
+        >
           {value}
         </p>
         {hint && <p className={`mt-1 ${UI_SIZES.pageSubtitle}`}>{hint}</p>}
       </CardContent>
     </Card>
-  )
+  );
 }

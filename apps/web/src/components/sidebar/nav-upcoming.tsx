@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import {
   SidebarGroup,
@@ -6,9 +6,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@/components/ui/sidebar'
-import { Badge } from '@/components/ui/badge'
-import { UPCOMING_FEATURES } from '@/lib/constants/navigation'
+} from '@/components/ui/sidebar';
+import { Badge } from '@/components/ui/badge';
+import { UPCOMING_FEATURES } from '@/lib/constants/navigation';
 
 export function NavUpcoming() {
   return (
@@ -18,7 +18,7 @@ export function NavUpcoming() {
       </SidebarGroupLabel>
       <SidebarMenu>
         {UPCOMING_FEATURES.map((feature) => {
-          const Icon = feature.icon
+          const Icon = feature.icon;
           return (
             <SidebarMenuItem key={feature.name}>
               <SidebarMenuButton tooltip={feature.description} disabled>
@@ -29,9 +29,9 @@ export function NavUpcoming() {
                 </Badge>
               </SidebarMenuButton>
             </SidebarMenuItem>
-          )
+          );
         })}
       </SidebarMenu>
     </SidebarGroup>
-  )
+  );
 }

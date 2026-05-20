@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
+import Link from 'next/link';
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -8,15 +8,15 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@/components/ui/sidebar'
-import { Badge } from '@/components/ui/badge'
-import { SearchIcon } from 'lucide-react'
-import { useAppSelector } from '@/store/hooks'
-import { ROUTES } from '@/lib/constants/app'
+} from '@/components/ui/sidebar';
+import { Badge } from '@/components/ui/badge';
+import { SearchIcon } from 'lucide-react';
+import { useAppSelector } from '@/store/hooks';
+import { ROUTES } from '@/lib/constants/app';
 
 export function NavRecentSearches() {
-  const searches = useAppSelector((s) => s.studio.recentSearches)
-  const loading = useAppSelector((s) => s.studio.loading.recentSearches)
+  const searches = useAppSelector((s) => s.studio.recentSearches);
+  const loading = useAppSelector((s) => s.studio.loading.recentSearches);
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
@@ -55,5 +55,5 @@ export function NavRecentSearches() {
         )}
       </SidebarMenu>
     </SidebarGroup>
-  )
+  );
 }

@@ -1,6 +1,6 @@
-export const APP_NAME = 'Cockroach Club'
-export const APP_TAGLINE = 'Cockroach Mode — Active'
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1'
+export const APP_NAME = 'Cockroach Club';
+export const APP_TAGLINE = 'Cockroach Mode — Active';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
 export const ROUTES = {
   home: '/',
@@ -11,10 +11,12 @@ export const ROUTES = {
   profile: '/studio/profile',
   resume: '/studio/resume',
   preparations: '/studio/preparations',
-  settings: '/settings',
-  account: '/account',
-  billing: '/billing',
-  notifications: '/notifications',
+  settings: '/user/settings',
+  account: '/user/account',
+  billing: '/user/billing',
+  notifications: '/user/notifications',
+  contact: '/user/contact-us',
   login: '/login',
   signup: '/signup',
-} as const
+} as const;
+
