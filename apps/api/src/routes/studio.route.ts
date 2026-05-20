@@ -2,6 +2,8 @@ import express from 'express'
 import {
   getDashboard,
   getJobs,
+  getJobById,
+  updateJobAction,
   getApplications,
   getRecentSearches,
   createRecentSearch,
@@ -24,6 +26,8 @@ const router = express.Router()
 
 router.get('/dashboard', getDashboard)
 router.get('/jobs', getJobs)
+router.get('/jobs/:id', getJobById)
+router.post('/jobs/:id/action', updateJobAction)
 router.get('/applications', getApplications)
 router.get('/searches/recent', getRecentSearches)
 router.post('/searches', createRecentSearch)

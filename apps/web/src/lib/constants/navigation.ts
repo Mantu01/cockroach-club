@@ -12,6 +12,7 @@ import {
   Target,
   Users,
   type LucideIcon,
+  User,
 } from 'lucide-react';
 import { ROUTES } from './app';
 
@@ -29,6 +30,7 @@ export interface UpcomingFeature {
 
 export const MAIN_NAV: NavItem[] = [
   { title: 'Dashboard', url: ROUTES.dashboard, icon: LayoutDashboard },
+  {title:"Profile", url:ROUTES.profile,icon:User},
   { title: 'Jobs', url: ROUTES.jobs, icon: Briefcase },
   { title: 'Applications', url: ROUTES.applications, icon: FileStack },
   { title: 'Resume', url: ROUTES.resume, icon: FileText },
@@ -124,6 +126,7 @@ export const PAGE_TITLES: Record<string, string> = {
   [ROUTES.account]: 'Account',
   [ROUTES.billing]: 'Billing',
   [ROUTES.notifications]: 'Notifications',
+  [ROUTES.quick]: 'Search',
   [ROUTES.contact]: 'Contact Us',
 };
 

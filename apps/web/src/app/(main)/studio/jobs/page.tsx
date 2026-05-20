@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { useStudioData } from '@/context/studio-data-context';
 import { useAppSelector } from '@/store/hooks';
 import { UI_SIZES } from '@/lib/constants/theme';
 import { ExternalLink, MapPin } from 'lucide-react';
+import { sourceImg } from '@/components/auth/jobSources-image';
 
 export default function JobsPage() {
   const { fetchJobs } = useStudioData();
@@ -40,10 +42,29 @@ export default function JobsPage() {
       <div className="flex flex-col gap-2 px-4 pb-6 lg:px-6">
         {jobs.map((job) => (
           <Card key={job._id} className="border border-border/40 bg-muted/5">
-            <CardHeader className="flex flex-row items-start justify-between gap-2 px-4 py-3">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-xs font-semibold">{job.title}</span>
-                <span className="text-[10px] text-muted-foreground">{job.company}</span>
+            <CardHeader className="flex flex-row items-center justify-between gap-3 px-4 py-3">
+              <div className="flex items-center gap-3">
+                {sourceImg[job.source as keyof typeof sourceImg] ? (
+                  <div className="relative h-10 w-10 overflow-hidden rounded-full bg-muted">
+                    <Image
+                      src={sourceImg[job.source as keyof typeof sourceImg]}
+                      alt={`${job.source} logo`}
+                      fill
+                      sizes="40px"
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="grid h-10 w-10 place-items-center rounded-full bg-muted">
+                    <span className="text-xs font-semibold uppercase text-muted-foreground">
+                      {job.source?.slice(0, 2)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs font-semibold">{job.title}</span>
+                  <span className="text-[10px] text-muted-foreground">{job.company}</span>
+                </div>
               </div>
               <Badge variant="outline" className="text-[9px] shrink-0">
                 {job.source}
@@ -65,15 +86,20 @@ export default function JobsPage() {
                   </Badge>
                 ))}
               </div>
-              <Button variant="ghost" size="sm" className="w-fit h-7 px-0 text-[10px]" asChild>
-                <Link href={job.url} target="_blank">
-                  View listing <ExternalLink className="ml-1 size-3" />
-                </Link>
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/studio/jobs/${job._id}`}>View details</Link>
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 text-[10px]" asChild>
+                  <Link href={job.url} target="_blank">
+                    Open listing <ExternalLink className="ml-1 size-3" />
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
     </div>
-  );
+  )
 }

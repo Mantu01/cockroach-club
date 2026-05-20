@@ -24,7 +24,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:p-1.5!">
-              <Link href={ROUTES.dashboard}>
+              <Link href={ROUTES.studio}>
                 <Flame className="size-4 text-[#b5451b]" />
                 <span
                   className="text-sm font-black tracking-tight"

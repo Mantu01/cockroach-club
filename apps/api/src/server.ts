@@ -8,6 +8,7 @@ import connectDB from './config/db.config.js'
 import webhookRouter from './routes/webhook.route.js'
 import userRouter from './routes/user.route.js'
 import studioRouter from './routes/studio.route.js'
+import jobsRouter from './routes/jobs.route.js'
 
 dotenv.config({ path: './.env' })
 
@@ -26,6 +27,7 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use('/api/v1/users', clerkMiddleware(), userRouter)
 app.use('/api/v1/studio', clerkMiddleware(), studioRouter)
+app.use('/api/v1/jobs', clerkMiddleware(), jobsRouter)
 
 app.get('/', (_req, res) => res.send('server is running...'))
 

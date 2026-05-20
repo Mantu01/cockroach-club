@@ -38,15 +38,43 @@ export const getDashboard = async (req: Request, res: Response) => {
       .limit(5)
       .lean()
 
-    const chartData = Array.from({ length: 7 }, (_, i) => {
+    const chartDays = Array.from({ length: 7 }, (_, i) => {
       const date = new Date()
+      date.setHours(0, 0, 0, 0)
       date.setDate(date.getDate() - (6 - i))
+      const start = new Date(date)
+      const end = new Date(date)
+      end.setHours(23, 59, 59, 999)
       return {
-        date: date.toISOString().split('T')[0],
-        searches: Math.floor(Math.random() * 8) + searches / 7,
-        applications: Math.floor(Math.random() * 4) + applications / 7,
+        label: date.toISOString().split('T')[0],
+        start,
+        end,
       }
     })
+
+    const searchCounts = await Promise.all(
+      chartDays.map((day) =>
+        RecentSearch.countDocuments({
+          userId,
+          createdAt: { $gte: day.start, $lte: day.end },
+        })
+      )
+    )
+
+    const applicationCounts = await Promise.all(
+      chartDays.map((day) =>
+        Application.countDocuments({
+          userId,
+          createdAt: { $gte: day.start, $lte: day.end },
+        })
+      )
+    )
+
+    const chartData = chartDays.map((day, index) => ({
+      date: day.label,
+      searches: searchCounts[index],
+      applications: applicationCounts[index],
+    }))
 
     const predictions = [
       {
@@ -61,12 +89,12 @@ export const getDashboard = async (req: Request, res: Response) => {
       },
       {
         label: 'Market match score',
-        value: 67,
-        trend: 'stable' as const,
+        value: jobs > 0 ? Math.min(90, 50 + jobs * 2) : 67,
+        trend: jobs > 0 ? 'up' : 'stable' as const,
       },
       {
         label: 'Resume ATS score',
-        value: 81,
+        value: userId ? 81 : 78,
         trend: 'up' as const,
       },
     ]
@@ -91,69 +119,67 @@ export const getDashboard = async (req: Request, res: Response) => {
 
 export const getJobs = async (_req: Request, res: Response) => {
   try {
-    let jobs = await Job.find().sort({ scrapedAt: -1 }).limit(50).lean()
-
-    if (jobs.length === 0) {
-      const seedJobs = [
-        {
-          title: 'Senior Frontend Engineer',
-          company: 'Vercel',
-          location: 'Remote',
-          source: 'LinkedIn',
-          url: 'https://example.com/jobs/1',
-          salary: '$140k - $180k',
-          type: 'Full-time',
-          tags: ['React', 'TypeScript', 'Next.js'],
-        },
-        {
-          title: 'Full Stack Developer',
-          company: 'Stripe',
-          location: 'San Francisco, CA',
-          source: 'Indeed',
-          url: 'https://example.com/jobs/2',
-          salary: '$130k - $170k',
-          type: 'Full-time',
-          tags: ['Node.js', 'React', 'PostgreSQL'],
-        },
-        {
-          title: 'Software Engineer II',
-          company: 'Google',
-          location: 'Mountain View, CA',
-          source: 'Glassdoor',
-          url: 'https://example.com/jobs/3',
-          salary: '$150k - $200k',
-          type: 'Full-time',
-          tags: ['Go', 'Python', 'Distributed Systems'],
-        },
-        {
-          title: 'React Developer',
-          company: 'Shopify',
-          location: 'Remote',
-          source: 'LinkedIn',
-          url: 'https://example.com/jobs/4',
-          salary: '$120k - $155k',
-          type: 'Full-time',
-          tags: ['React', 'GraphQL', 'Ruby'],
-        },
-        {
-          title: 'Backend Engineer',
-          company: 'Notion',
-          location: 'New York, NY',
-          source: 'Indeed',
-          url: 'https://example.com/jobs/5',
-          salary: '$135k - $175k',
-          type: 'Full-time',
-          tags: ['Node.js', 'MongoDB', 'AWS'],
-        },
-      ]
-      await Job.insertMany(seedJobs)
-      jobs = await Job.find().sort({ scrapedAt: -1 }).limit(50).lean()
-    }
-
+    const jobs = await Job.find().sort({ scrapedAt: -1 }).limit(50).lean()
     return res.status(200).json({ jobs })
   } catch (error) {
     console.error('Jobs error', error)
     return res.status(500).json({ error: 'Unable to fetch jobs' })
+  }
+}
+
+export const getJobById = async (req: Request, res: Response) => {
+  try {
+    const userId = getUserId(req)
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' })
+
+    const job = await Job.findById(req.params.id).lean()
+    if (!job) return res.status(404).json({ error: 'Job not found' })
+
+    const application = await Application.findOne({ userId, jobId: String(job._id) }).lean()
+
+    return res.status(200).json({ job, application })
+  } catch (error) {
+    console.error('Job detail error', error)
+    return res.status(500).json({ error: 'Unable to fetch job details' })
+  }
+}
+
+export const updateJobAction = async (req: Request, res: Response) => {
+  try {
+    const userId = getUserId(req)
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' })
+
+    const jobId = req.params.id
+    const { action } = req.body as { action?: string }
+    const job = await Job.findById(jobId).lean()
+
+    if (!job) return res.status(404).json({ error: 'Job not found' })
+
+    let status = 'saved'
+    if (action === 'apply') status = 'applied'
+    if (action === 'review') status = 'saved'
+    if (action === 'discard') status = 'rejected'
+
+    const application = await Application.findOneAndUpdate(
+      { userId, jobId },
+      {
+        $set: {
+          title: job.title,
+          company: job.company,
+          location: job.location,
+          url: job.url,
+          status,
+          searchQuery: job.title,
+          appliedAt: status === 'applied' ? new Date() : undefined,
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    ).lean()
+
+    return res.status(200).json({ application, job })
+  } catch (error) {
+    console.error('Job action error', error)
+    return res.status(500).json({ error: 'Unable to update job action' })
   }
 }
 

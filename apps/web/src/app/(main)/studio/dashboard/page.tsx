@@ -96,7 +96,7 @@ export default function DashboardPage() {
             <span className={UI_SIZES.sectionLabel}>Activity — Last 7 Days</span>
           </CardHeader>
           <CardContent className="px-2 pb-4">
-            <ChartContainer config={chartConfig} className="aspect-auto h-[180px] w-full">
+            <ChartContainer config={chartConfig} className="aspect-auto h-45 w-full">
               <AreaChart data={chartData}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis

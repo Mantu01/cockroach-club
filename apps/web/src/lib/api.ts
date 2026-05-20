@@ -28,6 +28,10 @@ apiClient.interceptors.request.use((config) => {
 export const studioApi = {
   getDashboard: () => apiClient.get('/studio/dashboard'),
   getJobs: () => apiClient.get('/studio/jobs'),
+  getJob: (id: string) => apiClient.get(`/studio/jobs/${id}`),
+  updateJobAction: (id: string, action: 'apply' | 'review' | 'discard') =>
+    apiClient.post(`/studio/jobs/${id}/action`, { action }),
+  searchJobs: (params: any) => apiClient.get('/jobs', { params }),
   getApplications: () => apiClient.get('/studio/applications'),
   getRecentSearches: () => apiClient.get('/studio/searches/recent'),
   createSearch: (data: { query: string; location?: string; resultsCount?: number }) =>
