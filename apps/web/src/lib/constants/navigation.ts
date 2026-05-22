@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   Briefcase,
+  Compass,
   FileStack,
   FileText,
   GraduationCap,
@@ -30,8 +31,9 @@ export interface UpcomingFeature {
 
 export const MAIN_NAV: NavItem[] = [
   { title: 'Dashboard', url: ROUTES.dashboard, icon: LayoutDashboard },
-  {title:"Profile", url:ROUTES.profile,icon:User},
+  { title: 'Profile', url: ROUTES.profile, icon: User },
   { title: 'Jobs', url: ROUTES.jobs, icon: Briefcase },
+  { title: 'Explore', url: ROUTES.explore, icon: Compass },
   { title: 'Applications', url: ROUTES.applications, icon: FileStack },
   { title: 'Resume', url: ROUTES.resume, icon: FileText },
   { title: 'Preparations', url: ROUTES.preparations, icon: GraduationCap },
@@ -52,8 +54,8 @@ export const STUDIO_FEATURES = [
     label: 'Quick Create',
     title: 'Launch\nanything fast.',
     desc: 'Start a job search, generate a resume, or begin interview prep in one click.',
-    href: ROUTES.studio,
-    cta: 'Open Studio',
+    href: ROUTES.quick,
+    cta: 'Open',
     accent: '#b5451b',
   },
   {
@@ -118,6 +120,7 @@ export const PAGE_TITLES: Record<string, string> = {
   [ROUTES.studio]: 'Studio',
   [ROUTES.dashboard]: 'Dashboard',
   [ROUTES.jobs]: 'Jobs',
+  [ROUTES.explore]: 'Explore',
   [ROUTES.applications]: 'Applications',
   [ROUTES.profile]: 'Profile',
   [ROUTES.resume]: 'Resume',

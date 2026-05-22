@@ -32,6 +32,9 @@ export const studioApi = {
   updateJobAction: (id: string, action: 'apply' | 'review' | 'discard') =>
     apiClient.post(`/studio/jobs/${id}/action`, { action }),
   searchJobs: (params: any) => apiClient.get('/jobs', { params }),
+  getExploreJobs: (params?: any) => apiClient.get('/studio/jobs/explore', { params }),
+  shareJob: (id: string) => apiClient.post(`/studio/jobs/${id}/share`),
+  getJobByShareId: (shareId: string) => apiClient.get(`/studio/jobs/share/${shareId}`),
   getApplications: () => apiClient.get('/studio/applications'),
   getRecentSearches: () => apiClient.get('/studio/searches/recent'),
   createSearch: (data: { query: string; location?: string; resultsCount?: number }) =>
@@ -40,9 +43,36 @@ export const studioApi = {
   updateProfile: (data: unknown) => apiClient.put('/studio/profile', data),
   getResume: () => apiClient.get('/studio/resume'),
   generateResume: (template?: string) => apiClient.post('/studio/resume/generate', { template }),
+  getResumes: () => apiClient.get('/studio/resumes'),
+  getResumeById: (id: string) => apiClient.get(`/studio/resumes/${id}`),
+  createResume: (data: {
+    title?: string;
+    template?: string;
+    useProfileData: boolean;
+    profileData?: unknown;
+    jobId?: string;
+    jobTitle?: string;
+    company?: string;
+    whyCreated?: string;
+  }) => apiClient.post('/studio/resumes', data),
+  updateResume: (id: string, data: { title: string; latex: string }) =>
+    apiClient.put(`/studio/resumes/${id}`, data),
+  deleteResume: (id: string) => apiClient.delete(`/studio/resumes/${id}`),
+  compileResume: (latex: string) =>
+    apiClient.post('/studio/resumes/compile', { latex }, { responseType: 'blob' }),
+  editResumeWithAI: (latex: string, prompt: string) =>
+    apiClient.post('/studio/resumes/ai-edit', { latex, prompt }),
   getPreparations: () => apiClient.get('/studio/preparations'),
-  createPreparation: (data: { role: string; title?: string }) =>
-    apiClient.post('/studio/preparations', data),
+  getPreparationById: (id: string) => apiClient.get(`/studio/preparations/${id}`),
+  createPreparation: (data: {
+    role: string;
+    title?: string;
+    jobId?: string;
+    jobTitle?: string;
+    company?: string;
+    skills?: string[];
+    experience?: string;
+  }) => apiClient.post('/studio/preparations', data),
   answerQuestion: (data: { preparationId: string; questionId: string; answer: string }) =>
     apiClient.post('/studio/preparations/answer', data),
   getSettings: () => apiClient.get('/studio/settings'),
@@ -60,6 +90,13 @@ export type DashboardStats = {
   preparationsDone: number;
   totalJobsScraped: number;
   prepProgress: number;
+  byStatus: {
+    applied: number;
+    saved: number;
+    rejected: number;
+    interview: number;
+    offer: number;
+  };
 };
 
 export type DashboardData = {
@@ -80,6 +117,11 @@ export type JobItem = {
   type: string;
   tags: string[];
   scrapedAt: string;
+  postedAt?: string;
+  shareId?: string;
+  description?: string;
+  skills?: string[];
+  experienceLevel?: string;
 };
 
 export type ApplicationItem = {
@@ -104,7 +146,7 @@ export type RecentSearchItem = {
 
 export type UserProfile = {
   fullName: string;
-  headline: string;
+  bio: string;
   phone: string;
   location: string;
   linkedin: string;
@@ -126,12 +168,35 @@ export type UserProfile = {
     startDate: string;
     endDate?: string;
   }[];
+  certificates?: string[];
+  desiredSalary?: string;
+  noticePeriod?: string;
+  relocationReady?: boolean;
+};
+
+export type ResumeItem = {
+  _id: string;
+  userId: string;
+  title: string;
+  latex: string;
+  template: string;
+  atsScore: number;
+  jobId?: string;
+  jobTitle?: string;
+  company?: string;
+  whyCreated?: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type PreparationItem = {
   _id: string;
   title: string;
   role: string;
+  jobId?: string;
+  jobTitle?: string;
+  company?: string;
+  jobStatus?: 'saved' | 'applied' | 'interview' | 'rejected' | 'offer';
   questions: {
     _id: string;
     question: string;

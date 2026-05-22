@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { Flame } from 'lucide-react';
+import { Bug } from 'lucide-react';
 import { APP_NAME, ROUTES } from '@/lib/constants/app';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -25,7 +25,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:p-1.5!">
               <Link href={ROUTES.studio}>
-                <Flame className="size-4 text-[#b5451b]" />
+                <Bug className="size-4 text-[#b5451b]" />
                 <span
                   className="text-sm font-black tracking-tight"
                   style={{ fontFamily: "'Syne', sans-serif" }}

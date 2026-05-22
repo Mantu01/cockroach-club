@@ -13,7 +13,7 @@ import {
   Bell,
   Settings2,
   Mail,
-  Flame,
+  Bug,
 } from 'lucide-react';
 import { ROUTES } from '@/lib/constants/app';
 import StoreProvider from '@/providers/store-provider';
@@ -45,7 +45,7 @@ function UserLayoutContent({ children }: { children: React.ReactNode }) {
         <aside className="w-full md:w-64 flex flex-col gap-4 shrink-0">
           <div className="flex items-center gap-2">
             <Link href={ROUTES.dashboard} className="flex items-center gap-2">
-              <Flame className="size-4 text-[#b5451b]" />
+              <Bug className="size-4 text-[#b5451b]" />
               <span
                 className="text-sm font-black tracking-tight"
                 style={{ fontFamily: "'Syne', sans-serif" }}

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { StudioPageHeader } from '@/components/studio/studio-page-header';
 import { StudioLoader } from '@/components/studio/studio-loader';
 import { useStudioData } from '@/context/studio-data-context';
@@ -26,6 +26,20 @@ export default function JobsPage() {
     void fetchJobs();
   }, [fetchJobs]);
 
+  const formatScrapedDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  };
+
   if (loading && jobs.length === 0) return <StudioLoader rows={8} />;
 
   return (
@@ -42,64 +56,66 @@ export default function JobsPage() {
       <div className="flex flex-col gap-2 px-4 pb-6 lg:px-6">
         {jobs.map((job) => (
           <Card key={job._id} className="border border-border/40 bg-muted/5">
-            <CardHeader className="flex flex-row items-center justify-between gap-3 px-4 py-3">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3">
               <div className="flex items-center gap-3">
                 {sourceImg[job.source as keyof typeof sourceImg] ? (
-                  <div className="relative h-10 w-10 overflow-hidden rounded-full bg-muted">
-                    <Image
-                      src={sourceImg[job.source as keyof typeof sourceImg]}
-                      alt={`${job.source} logo`}
-                      fill
-                      sizes="40px"
-                      className="object-cover"
-                    />
-                  </div>
+                  <Image
+                    src={sourceImg[job.source as keyof typeof sourceImg]}
+                    alt={`${job.source} logo`}
+                    width={32}
+                    height={32}
+                    className="rounded-full bg-muted object-cover size-8 shrink-0"
+                  />
                 ) : (
-                  <div className="grid h-10 w-10 place-items-center rounded-full bg-muted">
-                    <span className="text-xs font-semibold uppercase text-muted-foreground">
+                  <div className="grid h-8 w-8 place-items-center rounded-full bg-muted shrink-0">
+                    <span className="text-[10px] font-semibold uppercase text-muted-foreground">
                       {job.source?.slice(0, 2)}
                     </span>
                   </div>
                 )}
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs font-semibold">{job.title}</span>
-                  <span className="text-[10px] text-muted-foreground">{job.company}</span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-semibold leading-tight">{job.title}</span>
+                    <Badge variant="outline" className="text-[8px] tracking-wider uppercase h-4 px-1">
+                      {job.source}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
+                    <span>{job.company}</span>
+                    <span>•</span>
+                    <span className="flex items-center gap-0.5">
+                      <MapPin className="size-2.5" />
+                      {job.location}
+                    </span>
+                    {job.salary && (
+                      <>
+                        <span>•</span>
+                        <span>{job.salary}</span>
+                      </>
+                    )}
+                    <span>•</span>
+                    <span>{job.type}</span>
+                    <span>•</span>
+                    <span className="text-[9px] text-muted-foreground/80 font-mono">
+                      {formatScrapedDate(job.scrapedAt)}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <Badge variant="outline" className="text-[9px] shrink-0">
-                {job.source}
-              </Badge>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2 px-4 pb-3">
-              <div className="flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <MapPin className="size-3" />
-                  {job.location}
-                </span>
-                {job.salary && <span>{job.salary}</span>}
-                <span>{job.type}</span>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {job.tags?.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="text-[9px] px-1.5 py-0">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={`/studio/jobs/${job._id}`}>View details</Link>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 self-end md:self-center">
+                <Button variant="outline" size="sm" className="h-6 text-[9px] tracking-wider uppercase" asChild>
+                  <Link href={`/studio/jobs/${job._id}`}>Details</Link>
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 text-[10px]" asChild>
+                <Button variant="ghost" size="sm" className="h-6 text-[9px] text-muted-foreground hover:text-foreground tracking-wider uppercase" asChild>
                   <Link href={job.url} target="_blank">
-                    Open listing <ExternalLink className="ml-1 size-3" />
+                    Link <ExternalLink className="ml-1 size-2.5" />
                   </Link>
                 </Button>
               </div>
-            </CardContent>
+            </div>
           </Card>
         ))}
       </div>
     </div>
-  )
+  );
 }

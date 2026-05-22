@@ -16,6 +16,7 @@ export const ROUTES = {
   quick:'/studio/new',
   studio: '/studio',
   jobs: '/studio/jobs',
+  explore: '/studio/explore',
   applications: '/studio/applications',
   profile: '/studio/profile',
   resume: '/studio/resume',

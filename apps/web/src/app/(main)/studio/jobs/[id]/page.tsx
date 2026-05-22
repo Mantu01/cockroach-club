@@ -1,9 +1,9 @@
-'use client'
+'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -11,18 +11,24 @@ import { StudioPageHeader } from '@/components/studio/studio-page-header';
 import { studioApi } from '@/lib/api';
 import { sourceImg } from '@/components/auth/jobSources-image';
 import { useAppSelector } from '@/store/hooks';
-import { MapPin, ExternalLink, Sparkles, ClipboardList, ShieldCheck } from 'lucide-react';
+import { useStudioData } from '@/context/studio-data-context';
+import { ExternalLink, Sparkles, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function JobDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const jobId = params?.id as string;
   const profile = useAppSelector((state) => state.studio.profile);
+  const { createResume, createPreparation, shareJob } = useStudioData();
+
   const [job, setJob] = useState<any>(null);
   const [application, setApplication] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [resumeLoading, setResumeLoading] = useState(false);
+  const [prepLoading, setPrepLoading] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
 
   useEffect(() => {
     if (!jobId) return;
@@ -72,19 +78,67 @@ export default function JobDetailPage() {
   };
 
   const handleGenerateResume = async () => {
+    if (!job) return;
     setResumeLoading(true);
     try {
-      await studioApi.generateResume();
-      toast.success('Resume generated using your profile and this job details.');
+      const res = await createResume({
+        title: `Resume - ${job.title} at ${job.company}`,
+        template: 'modern',
+        useProfileData: true,
+        jobId: job._id,
+        jobTitle: job.title,
+        company: job.company,
+        whyCreated: job.description || ''
+      });
+      toast.success('Tailored resume generated successfully!');
+      router.push(`/studio/resumes/${res._id}`);
     } catch {
-      toast.error('Unable to generate resume');
+      toast.error('Unable to generate tailored resume');
     } finally {
       setResumeLoading(false);
     }
   };
 
+  const handleStartPrep = async () => {
+    if (!job) return;
+    setPrepLoading(true);
+    try {
+      const prep = await createPreparation({
+        role: job.title,
+        title: `${job.title} Prep at ${job.company}`,
+        jobId: job._id,
+        jobTitle: job.title,
+        company: job.company,
+        skills: job.skills,
+        experience: profile?.experience?.[0]?.description || ''
+      });
+      toast.success('Interview prep module generated!');
+      router.push(`/studio/preparation/${prep._id}`);
+    } catch {
+      toast.error('Unable to generate interview prep');
+    } finally {
+      setPrepLoading(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!jobId) return;
+    setShareLoading(true);
+    try {
+      const data = await shareJob(jobId);
+      if (data?.shareUrl) {
+        await navigator.clipboard.writeText(data.shareUrl);
+        toast.success('Share link copied to clipboard!');
+      }
+    } catch {
+      toast.error('Unable to generate share link');
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
   if (loading) {
-    return <StudioPageHeader title="Job details" description="Loading the job and your profile match�" />;
+    return <StudioPageHeader title="Job details" description="Loading the job and your profile match…" />;
   }
 
   if (!job) {
@@ -101,9 +155,21 @@ export default function JobDetailPage() {
         title={job.title}
         description={job.company}
         action={
-          <Badge variant="outline" className="text-[10px]">
-            {application?.status ?? 'Not saved'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[10px] tracking-widest uppercase"
+              onClick={handleShare}
+              disabled={shareLoading}
+            >
+              <Share2 className="size-3 mr-1" />
+              Share
+            </Button>
+            <Badge variant="outline" className="text-[10px] h-7 flex items-center">
+              {application?.status ?? 'Not saved'}
+            </Badge>
+          </div>
         }
       />
       <div className="grid gap-3 px-4 pb-6 lg:px-6 xl:grid-cols-[2fr_1fr]">
@@ -111,13 +177,19 @@ export default function JobDetailPage() {
           <Card className="border border-border/40 bg-muted/5">
             <CardHeader className="flex flex-col gap-3 px-4 py-3">
               <div className="flex items-center gap-3">
-                {sourceImg[job.source] ? (
-                  <div className="relative h-12 w-12 overflow-hidden rounded-full bg-muted">
-                    <Image src={sourceImg[job.source]} alt={`${job.source} logo`} fill sizes="48px" className="object-cover" />
-                  </div>
+                {sourceImg[job.source as keyof typeof sourceImg] ? (
+                  <Image
+                    src={sourceImg[job.source as keyof typeof sourceImg]}
+                    alt={`${job.source} logo`}
+                    width={40}
+                    height={40}
+                    className="rounded-full bg-muted object-cover size-10 shrink-0"
+                  />
                 ) : (
-                  <div className="grid h-12 w-12 place-items-center rounded-full bg-muted">
-                    <span className="text-xs font-semibold uppercase text-muted-foreground">{job.source?.slice(0, 2)}</span>
+                  <div className="grid h-10 w-10 place-items-center rounded-full bg-muted shrink-0">
+                    <span className="text-xs font-semibold uppercase text-muted-foreground">
+                      {job.source?.slice(0, 2)}
+                    </span>
                   </div>
                 )}
                 <div>
@@ -151,7 +223,13 @@ export default function JobDetailPage() {
               </Button>
             </CardHeader>
             <CardContent className="space-y-3 px-4 pb-4">
-              {job.description ? <p className="text-[12px] leading-relaxed text-muted-foreground">{job.description}</p> : <p className="text-[12px] text-muted-foreground">No description available.</p>}
+              {job.description ? (
+                <p className="text-[12px] leading-relaxed text-muted-foreground whitespace-pre-line">
+                  {job.description}
+                </p>
+              ) : (
+                <p className="text-[12px] text-muted-foreground">No description available.</p>
+              )}
               <div className="grid gap-2 sm:grid-cols-2">
                 {job.skills?.length ? (
                   <div className="space-y-1">
@@ -198,13 +276,30 @@ export default function JobDetailPage() {
             </CardHeader>
             <CardContent className="flex flex-col gap-2 px-4 pb-4">
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" className="h-8 text-[10px]" onClick={() => handleAction('apply')} disabled={actionLoading}>
+                <Button
+                  size="sm"
+                  className="h-8 text-[10px] tracking-widest uppercase"
+                  onClick={() => handleAction('apply')}
+                  disabled={actionLoading}
+                >
                   Apply
                 </Button>
-                <Button variant="outline" size="sm" className="h-8 text-[10px]" onClick={() => handleAction('review')} disabled={actionLoading}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-[10px] tracking-widest uppercase"
+                  onClick={() => handleAction('review')}
+                  disabled={actionLoading}
+                >
                   Review
                 </Button>
-                <Button variant="ghost" size="sm" className="h-8 text-[10px]" onClick={() => handleAction('discard')} disabled={actionLoading}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-[10px] tracking-widest uppercase"
+                  onClick={() => handleAction('discard')}
+                  disabled={actionLoading}
+                >
                   Discard
                 </Button>
               </div>
@@ -242,7 +337,11 @@ export default function JobDetailPage() {
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Experience summary</p>
-                <p className="text-sm">{profile?.experience?.[0]?.role ? `${profile.experience[0].role} at ${profile.experience[0].company}` : 'Update your profile to improve this match.'}</p>
+                <p className="text-sm">
+                  {profile?.experience?.[0]?.role
+                    ? `${profile.experience[0].role} at ${profile.experience[0].company}`
+                    : 'Update your profile to improve this match.'}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -253,17 +352,35 @@ export default function JobDetailPage() {
               <p className="text-[10px] text-muted-foreground">Regenerate your resume with this role in mind.</p>
             </CardHeader>
             <CardContent className="space-y-3 px-4 pb-4">
-              <p className="text-[10px] leading-relaxed text-muted-foreground">Use your profile to create an application-ready resume that better fits this listing.</p>
-              <Button size="sm" className="h-8 text-[10px]" onClick={handleGenerateResume} disabled={resumeLoading}>
-                {resumeLoading ? 'Generating�' : 'Generate resume'}
+              <p className="text-[10px] leading-relaxed text-muted-foreground">
+                Use your profile to create an application-ready resume that better fits this listing.
+              </p>
+              <Button
+                size="sm"
+                className="h-8 text-[10px] tracking-widest uppercase"
+                onClick={handleGenerateResume}
+                disabled={resumeLoading}
+              >
+                {resumeLoading ? 'Generating…' : 'Generate resume'}
               </Button>
             </CardContent>
           </Card>
 
           <Card className="border border-border/40 bg-muted/5">
-            <CardHeader className="px-4 py-3">
-              <p className="text-sm font-semibold">Interview prep</p>
-              <p className="text-[10px] text-muted-foreground">Questions tailored to this role and your profile.</p>
+            <CardHeader className="px-4 py-3 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold">Interview prep</p>
+                <p className="text-[10px] text-muted-foreground">Questions tailored to this role and your profile.</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 text-[9px] uppercase tracking-wider"
+                onClick={handleStartPrep}
+                disabled={prepLoading}
+              >
+                Start Practice
+              </Button>
             </CardHeader>
             <CardContent className="space-y-3 px-4 pb-4">
               {interviewQuestions.map((question, index) => (

@@ -1,184 +1,177 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StudioPageHeader } from '@/components/studio/studio-page-header';
-import { StudioLoader } from '@/components/studio/studio-loader';
+import Loader from '@/components/ui/loader';
 import { useStudioData } from '@/context/studio-data-context';
 import { useAppSelector } from '@/store/hooks';
-import { UI_SIZES } from '@/lib/constants/theme';
 import { toast } from 'sonner';
-import { Brain, CheckCircle2, Circle, Plus } from 'lucide-react';
-
-const DIFFICULTY_COLORS = {
-  easy: '#4a7c59',
-  medium: '#c4922a',
-  hard: '#b5451b',
-};
+import { Brain, Plus, ArrowRight, Briefcase, Calendar } from 'lucide-react';
 
 export default function PreparationsPage() {
-  const { fetchPreparations, createPreparation, answerQuestion } = useStudioData();
+  const { fetchPreparations, ensureAuth } = useStudioData();
   const preparations = useAppSelector((s) => s.studio.preparations);
   const loading = useAppSelector((s) => s.studio.loading.preparations);
-  const [role, setRole] = useState('');
-  const [activeAnswer, setActiveAnswer] = useState<{
-    prepId: string;
-    qId: string;
-    text: string;
-  } | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [activeTab, setActiveTab] = useState<'all' | 'saved' | 'applied' | 'interview' | 'rejected' | 'offer'>('all');
   const fetched = useRef(false);
 
   useEffect(() => {
     if (fetched.current) return;
     fetched.current = true;
-    void fetchPreparations();
-  }, [fetchPreparations]);
+    void (async () => {
+      const authed = await ensureAuth();
+      if (!authed) return;
+      try {
+        await fetchPreparations();
+      } catch {
+        toast.error('Failed to load preparations');
+      }
+    })();
+  }, [ensureAuth, fetchPreparations]);
 
-  const handleCreate = async () => {
-    if (!role.trim()) return;
-    setCreating(true);
-    try {
-      await createPreparation(role.trim());
-      setRole('');
-      toast.success('AI interview prep session created');
-    } catch {
-      toast.error('Failed to create prep session');
-    } finally {
-      setCreating(false);
-    }
-  };
+  const filteredPreps = preparations.filter((prep) => {
+    if (activeTab === 'all') return true;
+    return prep.jobStatus === activeTab;
+  });
 
-  const handleAnswer = async () => {
-    if (!activeAnswer) return;
-    try {
-      await answerQuestion(activeAnswer.prepId, activeAnswer.qId, activeAnswer.text);
-      setActiveAnswer(null);
-      toast.success('Answer saved');
-    } catch {
-      toast.error('Failed to save answer');
-    }
-  };
-
-  if (loading && preparations.length === 0) return <StudioLoader rows={6} />;
+  const tabs = [
+    { id: 'all', label: 'All' },
+    { id: 'saved', label: 'Saved' },
+    { id: 'applied', label: 'Applied' },
+    { id: 'interview', label: 'Interview' },
+    { id: 'rejected', label: 'Rejected' },
+    { id: 'offer', label: 'Offer' }
+  ] as const;
 
   return (
     <div className="flex flex-1 flex-col">
       <StudioPageHeader
         title="Preparations"
-        description="Practice interviews with AI-generated questions tailored to your target role."
+        description="Calibrate your interview responses. View generated AI practices tailored to your roles."
         action={
-          <div className="flex items-center gap-2">
-            <Input
-              className="h-7 w-40 text-xs"
-              placeholder="Target role…"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-            />
-            <Button
-              size="sm"
-              className="h-7 text-[10px]"
-              onClick={handleCreate}
-              disabled={creating || !role.trim()}
-            >
+          <Button size="sm" className="h-7 text-[10px] uppercase tracking-widest font-black" asChild>
+            <Link href="/studio/preparation/new">
               <Plus className="size-3 mr-1" />
-              New Session
-            </Button>
-          </div>
+              New Prep
+            </Link>
+          </Button>
         }
       />
-      <div className="flex flex-col gap-3 px-4 pb-6 lg:px-6">
-        {preparations.map((prep) => (
-          <Card key={prep._id} className="border border-border/40 bg-muted/5">
-            <CardHeader className="flex flex-row items-center justify-between px-4 py-3">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-xs font-semibold">{prep.title}</span>
-                <span className="text-[10px] text-muted-foreground">{prep.role}</span>
-              </div>
-              <Badge variant="outline" className={UI_SIZES.badge}>
-                <Brain className="size-3 mr-1" />
-                {prep.completedCount}/{prep.totalCount}
-              </Badge>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2 px-4 pb-4">
-              {prep.questions.map((q) => (
-                <div
-                  key={q._id}
-                  className="flex flex-col gap-2 border-b border-border/20 pb-3 last:border-0 last:pb-0"
-                >
-                  <div className="flex items-start gap-2">
-                    {q.answered ? (
-                      <CheckCircle2 className="size-3.5 shrink-0 text-[#4a7c59] mt-0.5" />
-                    ) : (
-                      <Circle className="size-3.5 shrink-0 text-muted-foreground mt-0.5" />
-                    )}
-                    <div className="flex flex-col gap-1 flex-1">
-                      <p className="text-xs">{q.question}</p>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-[9px]">
-                          {q.category}
-                        </Badge>
+
+      <div className="px-4 pb-12 lg:px-6">
+        <div className="flex border-b border-border/20 mb-6 overflow-x-auto scrollbar-none gap-2">
+          {tabs.map((tab) => {
+            const count = tab.id === 'all'
+              ? preparations.length
+              : preparations.filter((p) => p.jobStatus === tab.id).length;
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`pb-3 px-3 text-[10px] font-mono uppercase tracking-wider border-b-2 transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                  activeTab === tab.id
+                    ? 'border-[#b5451b] text-foreground font-bold'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {tab.label}
+                <span className={`text-[9px] rounded-full px-1.5 py-0.5 ${
+                  activeTab === tab.id ? 'bg-[#b5451b]/10 text-[#b5451b]' : 'bg-muted/10 text-muted-foreground'
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {loading && preparations.length === 0 ? (
+          <Loader />
+        ) : filteredPreps.length === 0 ? (
+          <Card className="border border-dashed border-border/40 bg-muted/5 flex flex-col items-center justify-center p-12 text-center">
+            <Brain className="size-12 text-muted-foreground mb-4" />
+            <h3 style={{ fontFamily: "'Syne', sans-serif" }} className="text-xl font-bold mb-2">No Prep Sessions Found</h3>
+            <p className="text-xs text-muted-foreground max-w-sm mb-6 leading-relaxed">
+              {activeTab === 'all'
+                ? "Generate questions customized for your skills, experience, and target jobs."
+                : `No prep sessions found with status '${activeTab}'.`}
+            </p>
+            <Button size="sm" className="h-8 text-[10px] uppercase tracking-widest font-black" asChild>
+              <Link href="/studio/preparation/new">
+                Create Prep Session
+              </Link>
+            </Button>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredPreps.map((prep) => {
+              const pct = prep.totalCount > 0 ? Math.round((prep.completedCount / prep.totalCount) * 100) : 0;
+
+              return (
+                <Card key={prep._id} className="border border-border/40 bg-muted/5 hover:border-border/80 transition-colors flex flex-col justify-between">
+                  <CardHeader className="p-5 pb-3 flex flex-col gap-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <CardTitle style={{ fontFamily: "'Syne', sans-serif" }} className="text-base font-black tracking-tight line-clamp-1">
+                        {prep.title}
+                      </CardTitle>
+                      {prep.jobStatus && (
                         <Badge
                           variant="outline"
-                          className="text-[9px] capitalize"
-                          style={{
-                            color: DIFFICULTY_COLORS[q.difficulty],
-                            borderColor: DIFFICULTY_COLORS[q.difficulty],
-                          }}
+                          className="text-[9px] font-mono font-bold uppercase tracking-wider shrink-0"
                         >
-                          {q.difficulty}
+                          {prep.jobStatus}
                         </Badge>
-                      </div>
-                      {q.userAnswer && (
-                        <p className="text-[10px] text-muted-foreground mt-1">{q.userAnswer}</p>
                       )}
                     </div>
-                  </div>
-                  {!q.answered &&
-                    (activeAnswer?.qId === q._id ? (
-                      <div className="flex flex-col gap-2 ml-5">
-                        <Textarea
-                          className="text-xs min-h-16"
-                          value={activeAnswer.text}
-                          onChange={(e) =>
-                            setActiveAnswer({ ...activeAnswer, text: e.target.value })
-                          }
-                          placeholder="Type your answer…"
-                        />
-                        <div className="flex gap-2">
-                          <Button size="sm" className="h-7 text-[10px]" onClick={handleAnswer}>
-                            Submit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 text-[10px]"
-                            onClick={() => setActiveAnswer(null)}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
+                    <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-1">
+                      <Briefcase className="size-3" /> {prep.role}
+                    </span>
+                  </CardHeader>
+
+                  <CardContent className="p-5 pt-0 flex flex-col gap-4">
+                    {prep.company && (
+                      <div className="text-[11px] font-semibold text-foreground line-clamp-1 border-t border-border/10 pt-3">
+                        Targeting: <span className="text-[#b5451b]">{prep.company}</span>
                       </div>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-[10px] ml-5 w-fit"
-                        onClick={() => setActiveAnswer({ prepId: prep._id, qId: q._id, text: '' })}
-                      >
-                        Practice Answer
+                    )}
+
+                    <div className="flex flex-col gap-1.5 border-t border-border/10 pt-3">
+                      <div className="flex justify-between items-center text-[10px] font-mono">
+                        <span className="text-muted-foreground">PREPARATION PROGRESS</span>
+                        <span className="font-bold">{pct}%</span>
+                      </div>
+                      <div className="w-full bg-border/20 h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-[#b5451b] h-full rounded-full transition-all duration-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="text-[9px] text-muted-foreground font-mono">
+                        {prep.completedCount} of {prep.totalCount} questions practice-answered
+                      </span>
+                    </div>
+
+                    <div className="border-t border-border/10 pt-4">
+                      <Button size="sm" className="w-full h-8 text-[10px] font-bold uppercase tracking-wider justify-between" asChild>
+                        <Link href={`/studio/preparation/${prep._id}`}>
+                          Start Practice Session
+                          <ArrowRight className="size-3" />
+                        </Link>
                       </Button>
-                    ))}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
 }
+

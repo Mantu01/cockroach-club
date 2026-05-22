@@ -1,60 +1,64 @@
-import mongoose, { Document, Model, Schema } from 'mongoose'
+import mongoose, { Document, Model, Schema } from 'mongoose';
 
 export interface IExperience {
-  company: string
-  role: string
-  startDate: string
-  endDate?: string
-  description: string
+  company: string;
+  role: string;
+  startDate: string;
+  endDate?: string;
+  description: string;
 }
 
 export interface IEducation {
-  institution: string
-  degree: string
-  field: string
-  startDate: string
-  endDate?: string
+  institution: string;
+  degree: string;
+  field: string;
+  startDate: string;
+  endDate?: string;
 }
 
 export interface IUserProfile {
-  fullName: string
-  headline: string
-  phone: string
-  location: string
-  linkedin: string
-  github: string
-  portfolio: string
-  summary: string
-  skills: string[]
-  experience: IExperience[]
-  education: IEducation[]
+  fullName: string;
+  bio: string;
+  phone: string;
+  location: string;
+  linkedin: string;
+  github: string;
+  portfolio: string;
+  summary: string;
+  skills: string[];
+  experience: IExperience[];
+  education: IEducation[];
+  certificates?: string[];
+  desiredSalary?: string;
+  noticePeriod?: string;
+  relocationReady?: boolean;
 }
 
 export interface IUserSettings {
-  theme: 'light' | 'dark' | 'system'
-  emailNotifications: boolean
-  jobAlerts: boolean
-  weeklyDigest: boolean
-  autoApply: boolean
-  profileVisibility: boolean
+  theme: 'light' | 'dark' | 'system';
+  emailNotifications: boolean;
+  jobAlerts: boolean;
+  weeklyDigest: boolean;
+  autoApply: boolean;
+  profileVisibility: boolean;
 }
 
 export interface IResume {
-  latex: string
-  template: string
-  lastGeneratedAt?: Date
+  latex: string;
+  template: string;
+  lastGeneratedAt?: Date;
 }
 
 export interface IUser {
-  id: string
-  email: string
-  credits: number
-  Tcredits: number
-  profile: IUserProfile
-  settings: IUserSettings
-  resume: IResume
-  createdAt?: Date
-  updatedAt?: Date
+  id: string;
+  email: string;
+  credits: number;
+  Tcredits: number;
+  profile: IUserProfile;
+  settings: IUserSettings;
+  resume: IResume;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface IUserDocument extends IUser, Document {}
@@ -68,7 +72,7 @@ const experienceSchema = new Schema<IExperience>(
     description: { type: String, default: '' },
   },
   { _id: false }
-)
+);
 
 const educationSchema = new Schema<IEducation>(
   {
@@ -79,7 +83,7 @@ const educationSchema = new Schema<IEducation>(
     endDate: { type: String },
   },
   { _id: false }
-)
+);
 
 const userSchema = new Schema<IUserDocument>(
   {
@@ -107,7 +111,7 @@ const userSchema = new Schema<IUserDocument>(
     },
     profile: {
       fullName: { type: String, default: '' },
-      headline: { type: String, default: '' },
+      bio: { type: String, default: '' },
       phone: { type: String, default: '' },
       location: { type: String, default: '' },
       linkedin: { type: String, default: '' },
@@ -117,6 +121,10 @@ const userSchema = new Schema<IUserDocument>(
       skills: [{ type: String }],
       experience: [experienceSchema],
       education: [educationSchema],
+      certificates: [{ type: String }],
+      desiredSalary: { type: String, default: '' },
+      noticePeriod: { type: String, default: '' },
+      relocationReady: { type: Boolean, default: false },
     },
     settings: {
       theme: {
@@ -139,9 +147,9 @@ const userSchema = new Schema<IUserDocument>(
   {
     timestamps: true,
   }
-)
+);
 
 const User: Model<IUserDocument> =
-  mongoose.models.User || mongoose.model<IUserDocument>('User', userSchema)
+  mongoose.models.User || mongoose.model<IUserDocument>('User', userSchema);
 
-export default User
+export default User;

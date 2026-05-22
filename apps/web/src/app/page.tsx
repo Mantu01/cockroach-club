@@ -16,9 +16,8 @@ const stages = [
     id: '01',
     word: 'SQUASHED',
     sub: 'The Welcome Phase',
-    description:
-      "Congratulations. Your resume got auto-rejected in 0.3 seconds by a bot with no soul. You weren't even wrong for the role — you were just formatted incorrectly. The system doesn't hate you. It just doesn't see you.",
-    image: 'https://images.unsplash.com/photo-1586769852836-bc069f19e1b3?w=600&q=80',
+    description:"Our resumes landed on the desks of people who got their positions through power, money, and connections. They looked at us the same way people look at cockroaches — unwanted, disposable, easy to ignore. Politicians spoke about opportunity on television while ordinary people like us were crushed silently beneath the system they created.",
+    image: 'https://res.cloudinary.com/dqznmhhtv/image/upload/v1779312470/ca3d7ad6-2c9f-4892-a60e-6e3ceab6bcb1_d7qh2g.jpg',
     align: 'left',
     icon: Shield,
     accent: '#b5451b',
@@ -27,10 +26,8 @@ const stages = [
     id: '02',
     word: 'STOMPED',
     sub: 'The Growth Arc',
-    description:
-      'You rewrote your resume three times. You tailored cover letters to companies that ghosted you. You were overqualified, underqualified, and somehow both at once. This is called experience.',
-    image: 'https://images.unsplash.com/photo-1545665225-b23b99e4d45e?w=600&q=80',
-    align: 'right',
+    description:  "Every interview felt less like opportunity and more like standing before people already convinced we did not belong there. Corruption wore expensive suits, smiled politely, and called rejection part of the process. We kept crawling through closed doors and impossible standards while those in power treated hardworking people like pests beneath their polished floors.",
+    image: 'https://res.cloudinary.com/dqznmhhtv/image/upload/v1779314926/59d2c62e-2e72-41fd-af37-b44cc8edf5d4_v7he3s.jpg',
     icon: Zap,
     accent: '#c4922a',
   },
@@ -38,9 +35,8 @@ const stages = [
     id: '03',
     word: 'SCUTTLED',
     sub: 'The Strategy',
-    description:
-      "Move sideways. Move diagonally. Move into roles nobody noticed. Cockroaches don't wait for doors — they find cracks. Your next opportunity isn't on the front page of any job board.",
-    image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=80',
+    description:"We stopped expecting fairness from systems designed to protect the powerful. Instead, we adapted. We moved through forgotten spaces, survived unstable work, learned quietly, and kept going no matter how many times society tried to stamp us out. Like cockroaches surviving inside collapsing walls, resilience became our rebellion.",
+    image: 'https://res.cloudinary.com/dqznmhhtv/image/upload/v1779314927/d3b64ca6-45e7-42b4-86a7-1ab81668a01f_eayik1.jpg',
     align: 'left',
     icon: Target,
     accent: '#4a7c59',
@@ -49,9 +45,8 @@ const stages = [
     id: '04',
     word: 'SURVIVED',
     sub: 'The Destination',
-    description:
-      "Not hired. Not celebrated. Just still here — which, given everything, is genuinely impressive. You outlasted every rejection, every silence, every 'we've decided to move forward with other candidates.'",
-    image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&q=80',
+    description:  "The politicians remained corrupt, the powerful remained comfortable, and the system remained rotten — but we survived it anyway. They treated ordinary people like cockroaches: something to avoid, silence, and crush whenever convenient. Yet after every rejection, humiliation, and betrayal, we were still standing. Not because the system helped us, but because it failed to destroy us.",
+    image: 'https://res.cloudinary.com/dqznmhhtv/image/upload/v1779314926/2d80aebc-a2ec-4bf6-81d9-05c46957f093_xm7evi.jpg',
     align: 'right',
     icon: Flame,
     accent: '#1a6b8a',
@@ -93,7 +88,7 @@ function StageCard({ stage, index }: { stage: (typeof stages)[0]; index: number 
   return (
     <div
       ref={ref}
-      className="grid grid-cols-1 lg:grid-cols-2 gap-0 min-h-[420px] overflow-hidden"
+      className="grid grid-cols-1 lg:grid-cols-2 gap-0 min-h-105 overflow-hidden"
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0)' : 'translateY(48px)',
@@ -116,7 +111,7 @@ function StageCard({ stage, index }: { stage: (typeof stages)[0]; index: number 
               </Badge>
             </div>
             <h2
-              className="text-[clamp(3rem,8vw,6rem)] font-black leading-none tracking-tighter mb-5"
+              className="text-[clamp(1.5rem,5vw,4.5rem)] font-black leading-none tracking-tighter mb-5"
               style={{ fontFamily: "'Syne', sans-serif", color: stage.accent }}
             >
               {stage.word}
@@ -135,7 +130,7 @@ function StageCard({ stage, index }: { stage: (typeof stages)[0]; index: number 
             </div>
           </div>
           <div className="overflow-hidden bg-muted/5">
-            <div className="w-full h-full min-h-[320px] overflow-hidden grayscale hover:grayscale-0 transition-all duration-700">
+            <div className="w-full h-full min-h-80 overflow-hidden grayscale hover:grayscale-0 transition-all duration-700">
               <Image
                 src={stage.image}
                 alt={stage.word}
@@ -149,7 +144,7 @@ function StageCard({ stage, index }: { stage: (typeof stages)[0]; index: number 
       ) : (
         <>
           <div className="overflow-hidden bg-muted/5 order-2 lg:order-1">
-            <div className="w-full h-full min-h-[320px] overflow-hidden grayscale hover:grayscale-0 transition-all duration-700">
+            <div className="w-full h-full min-h-80 overflow-hidden grayscale hover:grayscale-0 transition-all duration-700">
               <Image
                 src={stage.image}
                 alt={stage.word}
@@ -311,7 +306,7 @@ export default function Home() {
               >
                 {stat.value}
               </span>
-              <span className="text-xs text-muted-foreground leading-snug max-w-[160px]">
+              <span className="text-xs text-muted-foreground leading-snug max-w-40">
                 {stat.label}
               </span>
             </div>

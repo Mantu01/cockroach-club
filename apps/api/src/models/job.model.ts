@@ -1,39 +1,40 @@
-import mongoose, { Document, Model, Schema } from 'mongoose'
+import mongoose, { Document, Model, Schema } from 'mongoose';
 
 export interface IJob {
-  title: string
-  company: string
-  location: string
-  source: string
-  url: string
-  salary?: string
-  type: string
-  postedAt: Date
-  scrapedAt: Date
-  tags: string[]
-  description?: string
-  shortDescription?: string
-  companyLogo?: string
-  companyWebsite?: string
-  recruiter?: string
-  remote?: boolean
-  jobMode?: string
-  currency?: string
-  salaryMin?: number
-  salaryMax?: number
-  employmentType?: string
-  seniorityLevel?: string
-  experienceLevel?: string
-  domain?: string
-  industry?: string
-  skills: string[]
-  requirements: string[]
-  responsibilities: string[]
-  qualifications: string[]
-  benefits: string[]
-  technologies: string[]
-  language?: string
-  jobId?: string
+  title: string;
+  company: string;
+  location: string;
+  source: string;
+  url: string;
+  salary?: string;
+  type: string;
+  postedAt: Date;
+  scrapedAt: Date;
+  tags: string[];
+  description?: string;
+  shortDescription?: string;
+  companyLogo?: string;
+  companyWebsite?: string;
+  recruiter?: string;
+  remote?: boolean;
+  jobMode?: string;
+  currency?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  employmentType?: string;
+  seniorityLevel?: string;
+  experienceLevel?: string;
+  domain?: string;
+  industry?: string;
+  skills: string[];
+  requirements: string[];
+  responsibilities: string[];
+  qualifications: string[];
+  benefits: string[];
+  technologies: string[];
+  language?: string;
+  jobId?: string;
+  shareId?: string;
 }
 
 export interface IJobDocument extends IJob, Document {}
@@ -73,11 +74,12 @@ const jobSchema = new Schema<IJobDocument>(
     technologies: [{ type: String }],
     language: { type: String },
     jobId: { type: String },
+    shareId: { type: String, index: true },
   },
   { timestamps: true }
-)
+);
 
 const Job: Model<IJobDocument> =
-  mongoose.models.Job || mongoose.model<IJobDocument>('Job', jobSchema)
+  mongoose.models.Job || mongoose.model<IJobDocument>('Job', jobSchema);
 
-export default Job
+export default Job;

@@ -61,32 +61,32 @@ export default function DashboardPage() {
       />
       <div className="grid grid-cols-2 gap-3 px-4 py-4 lg:grid-cols-4 lg:px-6">
         <StatCard
-          label="Jobs Searched"
-          value={stats?.jobsSearched ?? 0}
-          trend="up"
-          change="+12%"
-          hint="Total search queries"
-        />
-        <StatCard
-          label="Applications"
-          value={stats?.totalApplications ?? 0}
-          trend="up"
-          change="+8%"
-          hint="Tracked applications"
-        />
-        <StatCard
-          label="Prep Done"
-          value={stats?.preparationsDone ?? 0}
-          trend="stable"
-          change={`${stats?.prepProgress ?? 0}%`}
-          hint="Questions completed"
-        />
-        <StatCard
-          label="Jobs Scraped"
+          label="Scraped Jobs"
           value={stats?.totalJobsScraped ?? 0}
           trend="up"
           change="Live"
           hint="Available in database"
+        />
+        <StatCard
+          label="Applied"
+          value={stats?.byStatus?.applied ?? 0}
+          trend="up"
+          change="Active"
+          hint="Tracked applications"
+        />
+        <StatCard
+          label="Under Review"
+          value={stats?.byStatus?.saved ?? 0}
+          trend="stable"
+          change="Saved"
+          hint="Marked for review"
+        />
+        <StatCard
+          label="Rejected"
+          value={stats?.byStatus?.rejected ?? 0}
+          trend="down"
+          change="Archived"
+          hint="Discarded opportunities"
         />
       </div>
 

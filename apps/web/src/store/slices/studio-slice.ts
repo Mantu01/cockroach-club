@@ -6,6 +6,7 @@ import type {
   RecentSearchItem,
   UserProfile,
   PreparationItem,
+  ResumeItem,
   UserSettings,
   NotificationItem,
   BillingData,
@@ -15,9 +16,12 @@ import type {
 interface StudioState {
   dashboard: DashboardData | null;
   jobs: JobItem[];
+  exploreJobs: JobItem[];
+  exploreTotal: number;
   applications: ApplicationItem[];
   recentSearches: RecentSearchItem[];
   profile: UserProfile | null;
+  resumes: ResumeItem[];
   preparations: PreparationItem[];
   settings: UserSettings | null;
   notifications: NotificationItem[];
@@ -30,9 +34,12 @@ interface StudioState {
 const initialState: StudioState = {
   dashboard: null,
   jobs: [],
+  exploreJobs: [],
+  exploreTotal: 0,
   applications: [],
   recentSearches: [],
   profile: null,
+  resumes: [],
   preparations: [],
   settings: null,
   notifications: [],
@@ -58,6 +65,10 @@ const studioSlice = createSlice({
     setJobs: (state, action: PayloadAction<JobItem[]>) => {
       state.jobs = action.payload;
     },
+    setExploreJobs: (state, action: PayloadAction<{ jobs: JobItem[]; total: number }>) => {
+      state.exploreJobs = action.payload.jobs;
+      state.exploreTotal = action.payload.total;
+    },
     setApplications: (state, action: PayloadAction<ApplicationItem[]>) => {
       state.applications = action.payload;
     },
@@ -66,6 +77,9 @@ const studioSlice = createSlice({
     },
     setProfile: (state, action: PayloadAction<UserProfile>) => {
       state.profile = action.payload;
+    },
+    setResumes: (state, action: PayloadAction<ResumeItem[]>) => {
+      state.resumes = action.payload;
     },
     setPreparations: (state, action: PayloadAction<PreparationItem[]>) => {
       state.preparations = action.payload;
@@ -94,9 +108,11 @@ export const {
   setError,
   setDashboard,
   setJobs,
+  setExploreJobs,
   setApplications,
   setRecentSearches,
   setProfile,
+  setResumes,
   setPreparations,
   setSettings,
   setNotifications,

@@ -1,11 +1,16 @@
-import { Request, Response } from 'express'
-import { getAuth } from '@clerk/express'
-import User from '../models/user.model.js'
-import Job from '../models/job.model.js'
-import Application from '../models/application.model.js'
-import RecentSearch from '../models/recent-search.model.js'
-import Preparation from '../models/preparation.model.js'
-import Notification from '../models/notification.model.js'
+import { Request, Response } from 'express';
+import { getAuth } from '@clerk/express';
+import User from '../models/user.model.js';
+import Job from '../models/job.model.js';
+import Application from '../models/application.model.js';
+import RecentSearch from '../models/recent-search.model.js';
+import Preparation from '../models/preparation.model.js';
+import Notification from '../models/notification.model.js';
+import Analytics from '../models/analytics.model.js';
+import Resume from '../models/resume.model.js';
+import { generateResumeLatex, generateInterviewQuestions, editResumeLatex as aiEditResumeLatex } from '../helpers/gemini.helper.js';
+import axios from 'axios';
+import crypto from 'crypto';
 
 const getUserId = (req: Request): string | null => {
   const auth = getAuth(req)
@@ -17,11 +22,19 @@ export const getDashboard = async (req: Request, res: Response) => {
     const userId = getUserId(req)
     if (!userId) return res.status(401).json({ error: 'Unauthorized' })
 
-    const [applications, preparations, searches, jobs] = await Promise.all([
-      Application.countDocuments({ userId }),
+    const [preparations, searches, totalJobs] = await Promise.all([
       Preparation.find({ userId }).lean(),
       RecentSearch.countDocuments({ userId }),
       Job.countDocuments(),
+    ])
+
+    const [totalApplications, appliedCount, savedCount, rejectedCount, interviewCount, offerCount] = await Promise.all([
+      Application.countDocuments({ userId }),
+      Application.countDocuments({ userId, status: 'applied' }),
+      Application.countDocuments({ userId, status: 'saved' }),
+      Application.countDocuments({ userId, status: 'rejected' }),
+      Application.countDocuments({ userId, status: 'interview' }),
+      Application.countDocuments({ userId, status: 'offer' }),
     ])
 
     const prepCompleted = preparations.reduce(
@@ -37,6 +50,16 @@ export const getDashboard = async (req: Request, res: Response) => {
       .sort({ updatedAt: -1 })
       .limit(5)
       .lean()
+
+    const jobIds = activity.map((a) => a.jobId).filter(Boolean) as string[];
+    const jobsMap: Record<string, any> = {};
+    if (jobIds.length > 0) {
+      const jobsDocs = await Job.find({ _id: { $in: jobIds } }).lean();
+      jobsDocs.forEach((j: any) => {
+        jobsMap[String(j._id)] = j;
+      });
+    }
+    const activityWithJobs = activity.map((a) => ({ ...a, job: a.jobId ? jobsMap[String(a.jobId)] ?? null : null }))
 
     const chartDays = Array.from({ length: 7 }, (_, i) => {
       const date = new Date()
@@ -84,13 +107,13 @@ export const getDashboard = async (req: Request, res: Response) => {
       },
       {
         label: 'Application success rate',
-        value: applications > 0 ? Math.min(78, 20 + applications * 3) : 24,
+        value: totalApplications > 0 ? Math.min(78, 20 + totalApplications * 3) : 24,
         trend: 'up' as const,
       },
       {
         label: 'Market match score',
-        value: jobs > 0 ? Math.min(90, 50 + jobs * 2) : 67,
-        trend: jobs > 0 ? 'up' : 'stable' as const,
+        value: totalJobs > 0 ? Math.min(90, 50 + totalJobs * 2) : 67,
+        trend: totalJobs > 0 ? 'up' : 'stable' as const,
       },
       {
         label: 'Resume ATS score',
@@ -102,12 +125,19 @@ export const getDashboard = async (req: Request, res: Response) => {
     return res.status(200).json({
       stats: {
         jobsSearched: searches,
-        totalApplications: applications,
+        totalApplications,
         preparationsDone: prepCompleted,
-        totalJobsScraped: jobs,
+        totalJobsScraped: totalJobs,
         prepProgress: prepTotal > 0 ? Math.round((prepCompleted / prepTotal) * 100) : 0,
+        byStatus: {
+          applied: appliedCount,
+          saved: savedCount,
+          rejected: rejectedCount,
+          interview: interviewCount,
+          offer: offerCount,
+        },
       },
-      activity,
+      activity: activityWithJobs,
       chartData,
       predictions,
     })
@@ -127,6 +157,73 @@ export const getJobs = async (_req: Request, res: Response) => {
   }
 }
 
+export const getExploreJobs = async (req: Request, res: Response) => {
+  try {
+    const { q, location, company, tag, remote, page = '1', limit = '20' } = req.query as Record<string, string>
+    const p = Math.max(1, parseInt(page, 10) || 1)
+    const l = Math.min(100, parseInt(limit, 10) || 20)
+
+    const filter: Record<string, any> = {}
+    if (q) {
+      const rx = new RegExp(q, 'i')
+      filter.$or = [{ title: rx }, { company: rx }, { shortDescription: rx }, { description: rx }]
+    }
+    if (location) filter.location = new RegExp(location, 'i')
+    if (company) filter.company = new RegExp(company, 'i')
+    if (tag) filter.tags = { $in: [tag] }
+    if (remote) filter.remote = remote === 'true'
+
+    const [jobs, total] = await Promise.all([
+      Job.find(filter).sort({ scrapedAt: -1 }).skip((p - 1) * l).limit(l).lean(),
+      Job.countDocuments(filter),
+    ])
+
+    return res.status(200).json({ jobs, total, page: p, limit: l })
+  } catch (error) {
+    console.error('Explore jobs error', error)
+    return res.status(500).json({ error: 'Unable to fetch explore jobs' })
+  }
+}
+
+export const shareJob = async (req: Request, res: Response) => {
+  try {
+    const jobId = String(req.params.id)
+    const job = await Job.findById(jobId).lean()
+    if (!job) return res.status(404).json({ error: 'Job not found' })
+
+    const shareId = job.shareId ?? crypto.randomBytes(8).toString('hex')
+    await Job.findByIdAndUpdate(jobId, { $set: { shareId } })
+
+    const userId = getUserId(req)
+    void Analytics.create({ userId: userId ?? undefined, type: 'job.share', action: 'share', jobId, meta: { shareId, title: job.title } })
+
+    const base = process.env.FRONTEND_URL ?? 'http://localhost:3000'
+    const shareUrl = `${base}/studio/explore?share=${shareId}`
+    return res.status(200).json({ shareId, shareUrl })
+  } catch (error) {
+    console.error('Share job error', error)
+    return res.status(500).json({ error: 'Unable to share job' })
+  }
+}
+
+export const getJobByShareId = async (req: Request, res: Response) => {
+  try {
+    const shareId = req.params.shareId ?? String(req.query.share ?? '')
+    if (!shareId) return res.status(400).json({ error: 'Missing share id' })
+
+    const job = await Job.findOne({ shareId }).lean()
+    if (!job) return res.status(404).json({ error: 'Job not found' })
+
+    const userId = getUserId(req)
+    void Analytics.create({ userId: userId ?? undefined, type: 'job.view', action: 'share_view', jobId: String(job._id), meta: { shareId, title: job.title } })
+
+    return res.status(200).json({ job })
+  } catch (error) {
+    console.error('Get job by share error', error)
+    return res.status(500).json({ error: 'Unable to fetch job' })
+  }
+}
+
 export const getJobById = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req)
@@ -135,7 +232,9 @@ export const getJobById = async (req: Request, res: Response) => {
     const job = await Job.findById(req.params.id).lean()
     if (!job) return res.status(404).json({ error: 'Job not found' })
 
-    const application = await Application.findOne({ userId, jobId: String(job._id) }).lean()
+    const application = await Application.findOne({ userId, jobId: String(job._id) }).lean().catch(() => null)
+
+    void Analytics.create({ userId, type: 'job.view', action: 'view', jobId: String(job._id), meta: { title: job.title } });
 
     return res.status(200).json({ job, application })
   } catch (error) {
@@ -149,7 +248,7 @@ export const updateJobAction = async (req: Request, res: Response) => {
     const userId = getUserId(req)
     if (!userId) return res.status(401).json({ error: 'Unauthorized' })
 
-    const jobId = req.params.id
+    const jobId = String(req.params.id)
     const { action } = req.body as { action?: string }
     const job = await Job.findById(jobId).lean()
 
@@ -176,6 +275,8 @@ export const updateJobAction = async (req: Request, res: Response) => {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     ).lean()
 
+    void Analytics.create({ userId, type: 'application', action: status, jobId, meta: { title: job.title, company: job.company } });
+
     return res.status(200).json({ application, job })
   } catch (error) {
     console.error('Job action error', error)
@@ -191,42 +292,6 @@ export const getApplications = async (req: Request, res: Response) => {
     let applications = await Application.find({ userId })
       .sort({ createdAt: -1 })
       .lean()
-
-    if (applications.length === 0) {
-      const seedApps = [
-        {
-          userId,
-          title: 'Frontend Engineer',
-          company: 'Linear',
-          location: 'Remote',
-          url: 'https://example.com/app/1',
-          status: 'applied' as const,
-          searchQuery: 'frontend engineer remote',
-          appliedAt: new Date(),
-        },
-        {
-          userId,
-          title: 'Software Developer',
-          company: 'Figma',
-          location: 'San Francisco, CA',
-          url: 'https://example.com/app/2',
-          status: 'interview' as const,
-          searchQuery: 'software developer',
-          appliedAt: new Date(),
-        },
-        {
-          userId,
-          title: 'React Specialist',
-          company: 'Airbnb',
-          location: 'Remote',
-          url: 'https://example.com/app/3',
-          status: 'saved' as const,
-          searchQuery: 'react developer',
-        },
-      ]
-      await Application.insertMany(seedApps)
-      applications = await Application.find({ userId }).sort({ createdAt: -1 }).lean()
-    }
 
     return res.status(200).json({ applications })
   } catch (error) {
@@ -276,6 +341,8 @@ export const createRecentSearch = async (req: Request, res: Response) => {
       resultsCount: resultsCount ?? 0,
     })
 
+    void Analytics.create({ userId, type: 'search', action: 'create', meta: { query, location, resultsCount } })
+
     return res.status(201).json({ search })
   } catch (error) {
     console.error('Create search error', error)
@@ -311,6 +378,8 @@ export const updateProfile = async (req: Request, res: Response) => {
 
     if (!user) return res.status(404).json({ error: 'User not found' })
 
+    void Analytics.create({ userId, type: 'profile', action: 'update' })
+
     return res.status(200).json({ profile: user.profile })
   } catch (error) {
     console.error('Update profile error', error)
@@ -320,49 +389,31 @@ export const updateProfile = async (req: Request, res: Response) => {
 
 export const getResume = async (req: Request, res: Response) => {
   try {
-    const userId = getUserId(req)
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' })
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const user = await User.findOne({ id: userId }).lean()
-    if (!user) return res.status(404).json({ error: 'User not found' })
+    const user = await User.findOne({ id: userId }).lean();
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-    return res.status(200).json({ resume: user.resume })
+    return res.status(200).json({ resume: user.resume });
   } catch (error) {
-    console.error('Resume error', error)
-    return res.status(500).json({ error: 'Unable to fetch resume' })
+    console.error('Resume error', error);
+    return res.status(500).json({ error: 'Unable to fetch resume' });
   }
-}
+};
 
 export const generateResume = async (req: Request, res: Response) => {
   try {
-    const userId = getUserId(req)
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' })
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const user = await User.findOne({ id: userId }).lean()
-    if (!user) return res.status(404).json({ error: 'User not found' })
+    const user = await User.findOne({ id: userId }).lean();
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const profile = user.profile
-    const template = req.body.template ?? user.resume?.template ?? 'modern'
+    const profile = user.profile;
+    const template = req.body.template ?? user.resume?.template ?? 'modern';
 
-    const latex = `\\documentclass[11pt,a4paper]{article}
-\\usepackage[margin=0.75in]{geometry}
-\\usepackage{enumitem}
-\\usepackage{hyperref}
-\\begin{document}
-\\begin{center}
-{\\LARGE \\textbf{${profile.fullName || 'Your Name'}}} \\\\
-${profile.headline || 'Professional Title'} \\\\
-${profile.location || ''} \\textbar\\ ${profile.phone || ''} \\textbar\\ ${user.email}
-\\end{center}
-\\section*{Summary}
-${profile.summary || 'Add your professional summary.'}
-\\section*{Skills}
-${(profile.skills ?? []).join(', ') || 'Add your skills.'}
-\\section*{Experience}
-${(profile.experience ?? []).map((exp) => `\\textbf{${exp.role}} — ${exp.company} (${exp.startDate}${exp.endDate ? ` – ${exp.endDate}` : ''})\\\\${exp.description}`).join('\n\n') || 'Add your experience.'}
-\\section*{Education}
-${(profile.education ?? []).map((edu) => `\\textbf{${edu.degree} in ${edu.field}} — ${edu.institution} (${edu.startDate}${edu.endDate ? ` – ${edu.endDate}` : ''})`).join('\n\n') || 'Add your education.'}
-\\end{document}`
+    const latex = await generateResumeLatex(profile, null, template);
 
     const updated = await User.findOneAndUpdate(
       { id: userId },
@@ -376,33 +427,249 @@ ${(profile.education ?? []).map((edu) => `\\textbf{${edu.degree} in ${edu.field}
         },
       },
       { new: true }
-    ).lean()
+    ).lean();
+
+    void Analytics.create({ userId, type: 'resume', action: 'generate', meta: { template } });
 
     return res.status(200).json({
       resume: updated?.resume,
       message: 'Resume generated successfully',
-    })
-  } catch (error) {
-    console.error('Generate resume error', error)
-    return res.status(500).json({ error: 'Unable to generate resume' })
+    });
+  } catch (error: any) {
+    console.error('Generate resume error', error);
+    return res.status(500).json({ error: error.message || 'Unable to generate resume' });
   }
-}
+};
+
+export const getResumes = async (req: Request, res: Response) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const resumes = await Resume.find({ userId }).sort({ createdAt: -1 }).lean();
+    return res.status(200).json({ resumes });
+  } catch (error) {
+    console.error('Get resumes error', error);
+    return res.status(500).json({ error: 'Unable to fetch resumes' });
+  }
+};
+
+export const getResumeById = async (req: Request, res: Response) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const resume = await Resume.findOne({ _id: req.params.id, userId }).lean();
+    if (!resume) return res.status(404).json({ error: 'Resume not found' });
+
+    return res.status(200).json({ resume });
+  } catch (error) {
+    console.error('Get resume by id error', error);
+    return res.status(500).json({ error: 'Unable to fetch resume' });
+  }
+};
+
+export const createResume = async (req: Request, res: Response) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { title, template, useProfileData, profileData, jobId, jobTitle, company, whyCreated } = req.body;
+    let finalProfileData = profileData;
+
+    if (useProfileData) {
+      const user = await User.findOne({ id: userId }).lean();
+      if (user && user.profile) {
+        finalProfileData = user.profile;
+      }
+    }
+
+    if (!finalProfileData) {
+      return res.status(400).json({ error: 'Profile data is required to generate a resume' });
+    }
+
+    let jobDetails = null;
+    if (jobId) {
+      jobDetails = await Job.findById(jobId).lean();
+    } else if (jobTitle && company) {
+      jobDetails = { title: jobTitle, company };
+    }
+
+    const latex = await generateResumeLatex(finalProfileData, jobDetails, template || 'modern');
+    const atsScore = Math.floor(Math.random() * 21) + 75;
+
+    const resume = await Resume.create({
+      userId,
+      title: title || (jobDetails ? `Resume - ${jobDetails.title}` : 'My Resume'),
+      latex,
+      template: template || 'modern',
+      atsScore,
+      jobId: jobId || undefined,
+      jobTitle: jobDetails ? jobDetails.title : (jobTitle || undefined),
+      company: jobDetails ? jobDetails.company : (company || undefined),
+      whyCreated: whyCreated || undefined,
+    });
+
+    void Analytics.create({ userId, type: 'resume', action: 'create', meta: { template, jobId } });
+
+    return res.status(201).json({ resume });
+  } catch (error: any) {
+    console.error('Create resume error', error);
+    return res.status(500).json({ error: error.message || 'Unable to create resume' });
+  }
+};
+
+export const updateResume = async (req: Request, res: Response) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { title, latex } = req.body;
+    const resume = await Resume.findOneAndUpdate(
+      { _id: req.params.id, userId },
+      { $set: { title, latex } },
+      { new: true }
+    ).lean();
+
+    if (!resume) return res.status(404).json({ error: 'Resume not found' });
+
+    return res.status(200).json({ resume });
+  } catch (error) {
+    console.error('Update resume error', error);
+    return res.status(500).json({ error: 'Unable to update resume' });
+  }
+};
+
+export const deleteResume = async (req: Request, res: Response) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const resume = await Resume.findOneAndDelete({ _id: req.params.id, userId }).lean();
+    if (!resume) return res.status(404).json({ error: 'Resume not found' });
+
+    return res.status(200).json({ message: 'Resume deleted successfully' });
+  } catch (error) {
+    console.error('Delete resume error', error);
+    return res.status(500).json({ error: 'Unable to delete resume' });
+  }
+};
+
+export const compileResume = async (req: Request,res: Response): Promise<Response | void> => {
+  try {
+    const { latex } = req.body;
+
+    if (!latex || typeof latex !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'LaTeX content is required',
+      });
+    }
+
+    const TEX_API_URL =process.env.TEX_API_URL!;
+
+    const TEX_API_KEY = process.env.TEX_API_KEY!;
+
+    if (!TEX_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'Missing TEX_API_KEY in environment variables',
+      });
+    }
+
+    const response = await axios.post(
+      TEX_API_URL,
+      {
+        content: latex,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': TEX_API_KEY,
+        },
+
+        responseType: 'arraybuffer',
+
+        timeout: 120000,
+
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+
+        validateStatus: () => true,
+      }
+    );
+
+    if (response.status !== 200) {
+      return res.status(response.status).json({
+        success: false,
+        error: 'LaTeX compilation failed',
+        details: Buffer.from(response.data).toString(),
+      });
+    }
+
+    const pdfBuffer = Buffer.from(response.data);
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Length': pdfBuffer.length,
+      'Content-Disposition': 'inline; filename="resume.pdf"',
+      'Cache-Control': 'no-store',
+    });
+
+    return res.end(pdfBuffer);
+  } catch (error: any) {
+    console.error('Compile Resume Error:', error);
+
+    if (axios.isAxiosError(error)) {
+      return res.status(500).json({
+        success: false,
+        error: 'TexAPI request failed',
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+    });
+  }
+};
+
+
+export const editResumeLatex = async (req: Request, res: Response) => {
+  try {
+    const { latex, prompt } = req.body;
+
+    if (!latex || !prompt || String(prompt).trim().length === 0) {
+      return res.status(400).json({ error: 'Both latex and prompt are required for AI editing' });
+    }
+
+    const updatedLatex = await aiEditResumeLatex(String(latex), String(prompt));
+    return res.status(200).json({ latex: updatedLatex });
+  } catch (error: any) {
+    console.error('AI resume edit error', error);
+    return res.status(500).json({
+      error: 'AI LaTeX edit failed',
+      message: error?.message || 'Unknown error',
+    });
+  }
+};
 
 export const getPreparations = async (req: Request, res: Response) => {
   try {
-    const userId = getUserId(req)
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' })
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    let preparations = await Preparation.find({ userId }).sort({ createdAt: -1 }).lean()
+    let preparations = await Preparation.find({ userId }).sort({ createdAt: -1 }).lean();
 
     if (preparations.length === 0) {
       const questions = [
-        { question: 'Tell me about yourself and your background.', category: 'Behavioral', difficulty: 'easy' as const, answered: true },
-        { question: 'Describe a challenging project you worked on recently.', category: 'Technical', difficulty: 'medium' as const, answered: false },
-        { question: 'How do you handle state management in large React applications?', category: 'Technical', difficulty: 'hard' as const, answered: false },
-        { question: 'Why do you want to work at this company?', category: 'Behavioral', difficulty: 'medium' as const, answered: false },
-        { question: 'Explain the difference between SSR and CSR in Next.js.', category: 'Technical', difficulty: 'medium' as const, answered: false },
-      ]
+        { question: 'Tell me about yourself and your background.', category: 'Behavioral', difficulty: 'easy', answered: true },
+        { question: 'Describe a challenging project you worked on recently.', category: 'Technical', difficulty: 'medium', answered: false },
+        { question: 'How do you handle state management in large React applications.', category: 'Technical', difficulty: 'hard', answered: false },
+        { question: 'Why do you want to work at this company.', category: 'Behavioral', difficulty: 'medium', answered: false },
+        { question: 'Explain the difference between SSR and CSR in Next.js.', category: 'Technical', difficulty: 'medium', answered: false },
+      ];
       await Preparation.create({
         userId,
         title: 'Frontend Engineer Interview',
@@ -410,46 +677,115 @@ export const getPreparations = async (req: Request, res: Response) => {
         questions,
         completedCount: 1,
         totalCount: questions.length,
-      })
-      preparations = await Preparation.find({ userId }).sort({ createdAt: -1 }).lean()
+      });
+      preparations = await Preparation.find({ userId }).sort({ createdAt: -1 }).lean();
     }
 
-    return res.status(200).json({ preparations })
+    const updatedPreparations = await Promise.all(
+      preparations.map(async (prep) => {
+        if (prep.jobId) {
+          const app = await Application.findOne({ userId, jobId: prep.jobId }).lean();
+          return {
+            ...prep,
+            jobStatus: app ? app.status : 'saved',
+          };
+        }
+        return {
+          ...prep,
+          jobStatus: 'saved',
+        };
+      })
+    );
+
+    return res.status(200).json({ preparations: updatedPreparations });
   } catch (error) {
-    console.error('Preparations error', error)
-    return res.status(500).json({ error: 'Unable to fetch preparations' })
+    console.error('Preparations error', error);
+    return res.status(500).json({ error: 'Unable to fetch preparations' });
   }
-}
+};
 
 export const createPreparation = async (req: Request, res: Response) => {
   try {
-    const userId = getUserId(req)
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' })
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { role, title } = req.body
-    const aiQuestions = [
-      { question: `What experience do you have as a ${role}?`, category: 'Behavioral', difficulty: 'easy' as const, answered: false },
-      { question: `Describe your approach to solving complex problems as a ${role}.`, category: 'Technical', difficulty: 'medium' as const, answered: false },
-      { question: `How would you design a scalable system for a ${role} role?`, category: 'System Design', difficulty: 'hard' as const, answered: false },
-      { question: 'Tell me about a time you disagreed with a team member.', category: 'Behavioral', difficulty: 'medium' as const, answered: false },
-      { question: 'Where do you see yourself in 3 years?', category: 'Behavioral', difficulty: 'easy' as const, answered: false },
-    ]
+    const { role, title, jobId, jobTitle, company, skills, experience } = req.body;
+
+    let finalRole = role || 'Software Engineer';
+    let finalCompany = company;
+    let finalJobTitle = jobTitle;
+
+    if (jobId) {
+      const job = await Job.findById(jobId).lean();
+      if (job) {
+        finalRole = job.title;
+        finalCompany = job.company;
+        finalJobTitle = job.title;
+      }
+    }
+
+    const aiQuestions = await generateInterviewQuestions(
+      finalRole,
+      finalCompany,
+      skills || [],
+      experience || ''
+    );
+
+    const mappedQuestions = aiQuestions.map((q) => ({
+      question: q.question,
+      category: q.category || 'Technical',
+      difficulty: q.difficulty || 'medium',
+      answered: false,
+    }));
 
     const preparation = await Preparation.create({
       userId,
-      title: title ?? `${role} Interview Prep`,
-      role,
-      questions: aiQuestions,
+      title: title || `${finalRole} Interview Prep`,
+      role: finalRole,
+      jobId: jobId || undefined,
+      jobTitle: finalJobTitle || undefined,
+      company: finalCompany || undefined,
+      questions: mappedQuestions,
       completedCount: 0,
-      totalCount: aiQuestions.length,
-    })
+      totalCount: mappedQuestions.length,
+    });
 
-    return res.status(201).json({ preparation })
-  } catch (error) {
-    console.error('Create preparation error', error)
-    return res.status(500).json({ error: 'Unable to create preparation' })
+    void Analytics.create({ userId, type: 'preparation', action: 'create', meta: { role: finalRole, jobId } });
+
+    return res.status(201).json({ preparation });
+  } catch (error: any) {
+    console.error('Create preparation error', error);
+    return res.status(500).json({ error: error.message || 'Unable to create preparation' });
   }
-}
+};
+
+export const getPreparationById = async (req: Request, res: Response) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const preparation = await Preparation.findOne({ _id: req.params.id, userId }).lean();
+    if (!preparation) return res.status(404).json({ error: 'Preparation not found' });
+
+    let jobStatus = 'saved';
+    if (preparation.jobId) {
+      const app = await Application.findOne({ userId, jobId: preparation.jobId }).lean();
+      if (app) {
+        jobStatus = app.status;
+      }
+    }
+
+    return res.status(200).json({
+      preparation: {
+        ...preparation,
+        jobStatus,
+      },
+    });
+  } catch (error) {
+    console.error('Get preparation by id error', error);
+    return res.status(500).json({ error: 'Unable to fetch preparation' });
+  }
+};
 
 export const answerPreparationQuestion = async (req: Request, res: Response) => {
   try {
@@ -472,6 +808,8 @@ export const answerPreparationQuestion = async (req: Request, res: Response) => 
     question.answered = true
     question.userAnswer = answer
     await preparation.save()
+
+    void Analytics.create({ userId, type: 'preparation', action: 'answer', meta: { preparationId, questionId } })
 
     return res.status(200).json({ preparation })
   } catch (error) {

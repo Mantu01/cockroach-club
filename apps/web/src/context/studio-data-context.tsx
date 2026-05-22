@@ -9,9 +9,11 @@ import {
   setError,
   setDashboard,
   setJobs,
+  setExploreJobs,
   setApplications,
   setRecentSearches,
   setProfile,
+  setResumes,
   setPreparations,
   setSettings,
   setNotifications,
@@ -23,9 +25,11 @@ import {
 type FetchKey =
   | 'dashboard'
   | 'jobs'
+  | 'exploreJobs'
   | 'applications'
   | 'recentSearches'
   | 'profile'
+  | 'resumes'
   | 'preparations'
   | 'settings'
   | 'notifications'
@@ -35,10 +39,30 @@ type FetchKey =
 interface StudioDataContextValue {
   fetchDashboard: () => Promise<void>;
   fetchJobs: () => Promise<void>;
+  fetchExploreJobs: (params?: any) => Promise<void>;
+  shareJob: (id: string) => Promise<any>;
+  getJobByShareId: (shareId: string) => Promise<any>;
   fetchApplications: () => Promise<void>;
   fetchRecentSearches: () => Promise<void>;
   fetchProfile: () => Promise<void>;
+  fetchResumes: () => Promise<void>;
+  fetchResumeById: (id: string) => Promise<any>;
+  createResume: (data: {
+    title?: string;
+    template?: string;
+    useProfileData: boolean;
+    profileData?: unknown;
+    jobId?: string;
+    jobTitle?: string;
+    company?: string;
+    whyCreated?: string;
+  }) => Promise<any>;
+  updateResume: (id: string, data: { title: string; latex: string }) => Promise<any>;
+  deleteResume: (id: string) => Promise<any>;
+  compileResume: (latex: string) => Promise<Blob>;
+  editResumeWithAI: (latex: string, prompt: string) => Promise<string>;
   fetchPreparations: () => Promise<void>;
+  fetchPreparationById: (id: string) => Promise<any>;
   fetchSettings: () => Promise<void>;
   fetchNotifications: () => Promise<void>;
   fetchBilling: () => Promise<void>;
@@ -46,7 +70,18 @@ interface StudioDataContextValue {
   updateProfile: (data: unknown) => Promise<void>;
   updateSettings: (data: unknown) => Promise<void>;
   generateResume: (template?: string) => Promise<unknown>;
-  createPreparation: (role: string, title?: string) => Promise<void>;
+  createPreparation: (
+    roleOrData: string | {
+      role: string;
+      title?: string;
+      jobId?: string;
+      jobTitle?: string;
+      company?: string;
+      skills?: string[];
+      experience?: string;
+    },
+    title?: string
+  ) => Promise<any>;
   answerQuestion: (preparationId: string, questionId: string, answer: string) => Promise<void>;
   markNotificationRead: (id: string) => Promise<void>;
   ensureAuth: () => Promise<boolean>;
@@ -88,7 +123,7 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
         dispatch(setLoading({ key, value: false }));
       }
     },
-    [dispatch, ensureAuth],
+    [dispatch, ensureAuth]
   );
 
   const fetchDashboard = useCallback(
@@ -97,7 +132,7 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
         const { data } = await studioApi.getDashboard();
         dispatch(setDashboard(data));
       }),
-    [dispatch, withFetch],
+    [dispatch, withFetch]
   );
 
   const fetchJobs = useCallback(
@@ -106,7 +141,33 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
         const { data } = await studioApi.getJobs();
         dispatch(setJobs(data.jobs));
       }),
-    [dispatch, withFetch],
+    [dispatch, withFetch]
+  );
+
+  const fetchExploreJobs = useCallback(
+    (params?: any) =>
+      withFetch('exploreJobs', async () => {
+        const { data } = await studioApi.getExploreJobs(params);
+        dispatch(setExploreJobs({ jobs: data.jobs, total: data.total }));
+      }),
+    [dispatch, withFetch]
+  );
+
+  const shareJob = useCallback(
+    async (id: string) => {
+      await ensureAuth();
+      const { data } = await studioApi.shareJob(id);
+      return data;
+    },
+    [ensureAuth]
+  );
+
+  const getJobByShareId = useCallback(
+    async (shareId: string) => {
+      const { data } = await studioApi.getJobByShareId(shareId);
+      return data.job;
+    },
+    []
   );
 
   const fetchApplications = useCallback(
@@ -115,7 +176,7 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
         const { data } = await studioApi.getApplications();
         dispatch(setApplications(data.applications));
       }),
-    [dispatch, withFetch],
+    [dispatch, withFetch]
   );
 
   const fetchRecentSearches = useCallback(
@@ -124,7 +185,7 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
         const { data } = await studioApi.getRecentSearches();
         dispatch(setRecentSearches(data.searches));
       }),
-    [dispatch, withFetch],
+    [dispatch, withFetch]
   );
 
   const fetchProfile = useCallback(
@@ -133,7 +194,82 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
         const { data } = await studioApi.getProfile();
         dispatch(setProfile(data.profile));
       }),
-    [dispatch, withFetch],
+    [dispatch, withFetch]
+  );
+
+  const fetchResumes = useCallback(
+    () =>
+      withFetch('resumes', async () => {
+        const { data } = await studioApi.getResumes();
+        dispatch(setResumes(data.resumes));
+      }),
+    [dispatch, withFetch]
+  );
+
+  const fetchResumeById = useCallback(
+    async (id: string) => {
+      await ensureAuth();
+      const { data } = await studioApi.getResumeById(id);
+      return data.resume;
+    },
+    [ensureAuth]
+  );
+
+  const createResume = useCallback(
+    async (resumeData: {
+      title?: string;
+      template?: string;
+      useProfileData: boolean;
+      profileData?: unknown;
+      jobId?: string;
+      jobTitle?: string;
+      company?: string;
+      whyCreated?: string;
+    }) => {
+      await ensureAuth();
+      const { data } = await studioApi.createResume(resumeData);
+      await fetchResumes();
+      return data.resume;
+    },
+    [ensureAuth, fetchResumes]
+  );
+
+  const updateResume = useCallback(
+    async (id: string, resumeData: { title: string; latex: string }) => {
+      await ensureAuth();
+      const { data } = await studioApi.updateResume(id, resumeData);
+      await fetchResumes();
+      return data.resume;
+    },
+    [ensureAuth, fetchResumes]
+  );
+
+  const deleteResume = useCallback(
+    async (id: string) => {
+      await ensureAuth();
+      const { data } = await studioApi.deleteResume(id);
+      await fetchResumes();
+      return data;
+    },
+    [ensureAuth, fetchResumes]
+  );
+
+  const compileResume = useCallback(
+    async (latex: string) => {
+      await ensureAuth();
+      const { data } = await studioApi.compileResume(latex);
+      return data;
+    },
+    [ensureAuth]
+  );
+
+  const editResumeWithAI = useCallback(
+    async (latex: string, prompt: string) => {
+      await ensureAuth();
+      const { data } = await studioApi.editResumeWithAI(latex, prompt);
+      return data.latex as string;
+    },
+    [ensureAuth]
   );
 
   const fetchPreparations = useCallback(
@@ -142,7 +278,16 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
         const { data } = await studioApi.getPreparations();
         dispatch(setPreparations(data.preparations));
       }),
-    [dispatch, withFetch],
+    [dispatch, withFetch]
+  );
+
+  const fetchPreparationById = useCallback(
+    async (id: string) => {
+      await ensureAuth();
+      const { data } = await studioApi.getPreparationById(id);
+      return data.preparation;
+    },
+    [ensureAuth]
   );
 
   const fetchSettings = useCallback(
@@ -151,7 +296,7 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
         const { data } = await studioApi.getSettings();
         dispatch(setSettings(data.settings));
       }),
-    [dispatch, withFetch],
+    [dispatch, withFetch]
   );
 
   const fetchNotifications = useCallback(
@@ -160,7 +305,7 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
         const { data } = await studioApi.getNotifications();
         dispatch(setNotifications(data.notifications));
       }),
-    [dispatch, withFetch],
+    [dispatch, withFetch]
   );
 
   const fetchBilling = useCallback(
@@ -169,7 +314,7 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
         const { data } = await studioApi.getBilling();
         dispatch(setBilling(data.billing));
       }),
-    [dispatch, withFetch],
+    [dispatch, withFetch]
   );
 
   const fetchAccount = useCallback(
@@ -178,7 +323,7 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
         const { data } = await studioApi.getAccount();
         dispatch(setAccount(data.account));
       }),
-    [dispatch, withFetch],
+    [dispatch, withFetch]
   );
 
   const updateProfile = useCallback(
@@ -187,7 +332,7 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
       const { data } = await studioApi.updateProfile(profileData);
       dispatch(setProfile(data.profile));
     },
-    [dispatch, ensureAuth],
+    [dispatch, ensureAuth]
   );
 
   const updateSettingsData = useCallback(
@@ -196,7 +341,7 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
       const { data } = await studioApi.updateSettings(settingsData);
       dispatch(setSettings(data.settings));
     },
-    [dispatch, ensureAuth],
+    [dispatch, ensureAuth]
   );
 
   const generateResume = useCallback(
@@ -204,16 +349,34 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
       await ensureAuth();
       return studioApi.generateResume(template);
     },
-    [ensureAuth],
+    [ensureAuth]
   );
 
   const createPreparation = useCallback(
-    async (role: string, title?: string) => {
+    async (
+      roleOrData: string | {
+        role: string;
+        title?: string;
+        jobId?: string;
+        jobTitle?: string;
+        company?: string;
+        skills?: string[];
+        experience?: string;
+      },
+      title?: string
+    ) => {
       await ensureAuth();
-      await studioApi.createPreparation({ role, title });
+      let payload;
+      if (typeof roleOrData === 'string') {
+        payload = { role: roleOrData, title };
+      } else {
+        payload = roleOrData;
+      }
+      const { data } = await studioApi.createPreparation(payload);
       await fetchPreparations();
+      return data.preparation;
     },
-    [ensureAuth, fetchPreparations],
+    [ensureAuth, fetchPreparations]
   );
 
   const answerQuestion = useCallback(
@@ -223,7 +386,7 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
       const { data: allData } = await studioApi.getPreparations();
       dispatch(setPreparations(allData.preparations));
     },
-    [dispatch, ensureAuth],
+    [dispatch, ensureAuth]
   );
 
   const markNotificationRead = useCallback(
@@ -232,17 +395,28 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
       const { data } = await studioApi.markNotificationRead(id);
       dispatch(updateNotification(data.notification));
     },
-    [dispatch, ensureAuth],
+    [dispatch, ensureAuth]
   );
 
   const value = useMemo(
     () => ({
       fetchDashboard,
       fetchJobs,
+      fetchExploreJobs,
+      shareJob,
+      getJobByShareId,
       fetchApplications,
       fetchRecentSearches,
       fetchProfile,
+      fetchResumes,
+      fetchResumeById,
+      createResume,
+      updateResume,
+      deleteResume,
+      compileResume,
+      editResumeWithAI,
       fetchPreparations,
+      fetchPreparationById,
       fetchSettings,
       fetchNotifications,
       fetchBilling,
@@ -258,10 +432,21 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
     [
       fetchDashboard,
       fetchJobs,
+      fetchExploreJobs,
+      shareJob,
+      getJobByShareId,
       fetchApplications,
       fetchRecentSearches,
       fetchProfile,
+      fetchResumes,
+      fetchResumeById,
+      createResume,
+      updateResume,
+      deleteResume,
+      compileResume,
+      editResumeWithAI,
       fetchPreparations,
+      fetchPreparationById,
       fetchSettings,
       fetchNotifications,
       fetchBilling,
@@ -273,7 +458,7 @@ export function StudioDataProvider({ children }: { children: ReactNode }) {
       answerQuestion,
       markNotificationRead,
       ensureAuth,
-    ],
+    ]
   );
 
   return <StudioDataContext.Provider value={value}>{children}</StudioDataContext.Provider>;

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Flame } from 'lucide-react';
+import { Bug } from 'lucide-react';
 import { ROUTES } from '@/lib/constants/app';
 
 export default function Header() {
@@ -27,7 +27,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/30 bg-background/80 backdrop-blur-md px-6 py-4">
       <div className="mx-auto flex max-w-7xl items-center justify-between">
         <Link href={ROUTES.home} className="flex items-center gap-2">
-          <Flame className="size-5 text-[#b5451b]" />
+          <Bug className="size-5 text-[#b5451b]" />
           <span
             className="text-base font-black tracking-tight"
             style={{ fontFamily: "'Syne', sans-serif" }}

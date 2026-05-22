@@ -1,29 +1,23 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { StudioPageHeader } from '@/components/studio/studio-page-header';
+import Link from 'next/link';
+import { useAppSelector } from '@/store/hooks';
 import { useStudioData } from '@/context/studio-data-context';
-import { UI_SIZES } from '@/lib/constants/theme';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { StudioPageHeader } from '@/components/studio/studio-page-header';
+import Loader from '@/components/ui/loader';
 import { toast } from 'sonner';
-import { Download, FileText, Sparkles } from 'lucide-react';
-import { studioApi } from '@/lib/api';
+import { Plus, FileText, Download, Trash2, ArrowRight } from 'lucide-react';
+import { ResumeItem } from '@/lib/api';
 
 export default function ResumePage() {
-  const { generateResume, ensureAuth } = useStudioData();
-  const [latex, setLatex] = useState('');
-  const [template, setTemplate] = useState('modern');
-  const [generating, setGenerating] = useState(false);
+  const { fetchResumes, deleteResume, compileResume, ensureAuth } = useStudioData();
+  const resumes = useAppSelector((s) => s.studio.resumes);
+  const loading = useAppSelector((s) => s.studio.loading.resumes);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const fetched = useRef(false);
 
   useEffect(() => {
@@ -33,127 +27,152 @@ export default function ResumePage() {
       const authed = await ensureAuth();
       if (!authed) return;
       try {
-        const { data } = await studioApi.getResume();
-        if (data.resume?.latex) setLatex(data.resume.latex);
-        if (data.resume?.template) setTemplate(data.resume.template);
+        await fetchResumes();
       } catch {
-        toast.error('Failed to load resume');
+        toast.error('Failed to load resumes');
       }
     })();
-  }, [ensureAuth]);
+  }, [ensureAuth, fetchResumes]);
 
-  const handleGenerate = async () => {
-    setGenerating(true);
+  const handleDelete = async (id: string) => {
     try {
-      const response = (await generateResume(template)) as { data: { resume: { latex: string } } };
-      setLatex(response.data.resume.latex);
-      toast.success('Resume generated from profile data');
+      await deleteResume(id);
+      toast.success('Resume deleted successfully');
     } catch {
-      toast.error('Failed to generate resume');
-    } finally {
-      setGenerating(false);
+      toast.error('Failed to delete resume');
     }
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([latex], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'resume.tex';
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('LaTeX file downloaded — compile to PDF with your LaTeX editor');
+  const handleDownloadPDF = async (resume: ResumeItem) => {
+    setDownloadingId(resume._id);
+    try {
+      const blob = await compileResume(resume.latex);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${resume.title.replace(/\s+/g, '_')}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('PDF downloaded successfully');
+    } catch {
+      toast.error('Failed to compile LaTeX to PDF');
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   return (
     <div className="flex flex-1 flex-col">
       <StudioPageHeader
-        title="Resume"
-        description="Generate ATS-optimized resumes from your profile — LaTeX source compiled to PDF."
+        title="Resume Forge"
+        description="Compile, edit, and tailor multiple LaTeX resumes for your job applications."
         action={
-          <div className="flex items-center gap-2">
-            <Select value={template} onValueChange={setTemplate}>
-              <SelectTrigger className="h-7 w-28 text-[10px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="modern" className="text-xs">
-                  Modern
-                </SelectItem>
-                <SelectItem value="classic" className="text-xs">
-                  Classic
-                </SelectItem>
-                <SelectItem value="minimal" className="text-xs">
-                  Minimal
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              size="sm"
-              className="h-7 text-[10px]"
-              onClick={handleGenerate}
-              disabled={generating}
-            >
-              <Sparkles className="size-3 mr-1" />
-              {generating ? 'Generating…' : 'Generate'}
-            </Button>
-          </div>
+          <Button size="sm" className="h-7 text-[10px] uppercase tracking-widest font-black" asChild>
+            <Link href="/studio/resume/new">
+              <Plus className="size-3 mr-1" />
+              New Resume
+            </Link>
+          </Button>
         }
       />
-      <div className="grid grid-cols-1 gap-3 px-4 pb-6 lg:grid-cols-3 lg:px-6">
-        <Card className="border border-border/40 bg-muted/5 lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between px-4 py-3">
-            <span className={UI_SIZES.sectionLabel}>LaTeX Source</span>
-            <Badge variant="outline" className={UI_SIZES.badge}>
-              <FileText className="size-3 mr-1" />
-              .tex
-            </Badge>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <Textarea
-              className="min-h-[400px] font-mono text-[10px] leading-relaxed"
-              value={latex}
-              onChange={(e) => setLatex(e.target.value)}
-              placeholder="Click Generate to create LaTeX from your profile data…"
-            />
-          </CardContent>
-        </Card>
 
-        <div className="flex flex-col gap-3">
-          <Card className="border border-border/40 bg-muted/5">
-            <CardHeader className="px-4 py-3">
-              <span className={UI_SIZES.sectionLabel}>Export</span>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2 px-4 pb-4">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 text-[10px] justify-start"
-                onClick={handleDownload}
-                disabled={!latex}
-              >
-                <Download className="size-3 mr-2" />
-                Download .tex file
-              </Button>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Compile the LaTeX source with pdflatex or an online editor like Overleaf to produce
-                your PDF resume.
-              </p>
-            </CardContent>
+      <div className="px-4 pb-6 lg:px-6">
+        {loading && resumes.length === 0 ? (
+          <Loader />
+        ) : resumes.length === 0 ? (
+          <Card className="border border-dashed border-border/40 bg-muted/5 flex flex-col items-center justify-center p-12 text-center">
+            <FileText className="size-12 text-muted-foreground mb-4" />
+            <h3 style={{ fontFamily: "'Syne', sans-serif" }} className="text-xl font-bold mb-2">No Resumes Yet</h3>
+            <p className="text-xs text-muted-foreground max-w-sm mb-6 leading-relaxed">
+              Create your first ATS-optimized LaTeX resume. Tailor it to a job or make a generic one.
+            </p>
+            <Button size="sm" className="h-8 text-[10px] uppercase tracking-widest font-black" asChild>
+              <Link href="/studio/resume/new">
+                Create First Resume
+              </Link>
+            </Button>
           </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {resumes.map((resume) => {
+              const dateStr = new Date(resume.createdAt).toLocaleDateString();
+              const isHigh = resume.atsScore >= 85;
+              const isMedium = resume.atsScore >= 75 && resume.atsScore < 85;
 
-          <Card className="border border-border/40 bg-muted/5">
-            <CardHeader className="px-4 py-3">
-              <span className={UI_SIZES.sectionLabel}>Tips</span>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2 px-4 pb-4 text-[10px] text-muted-foreground leading-relaxed">
-              <p>Update your profile first for the best generated output.</p>
-              <p>Use keyword-dense skills matching your target roles.</p>
-              <p>Keep experience descriptions concise and quantified.</p>
-            </CardContent>
-          </Card>
-        </div>
+              return (
+                <Card key={resume._id} className="border border-border/40 bg-muted/5 hover:border-border/80 transition-colors flex flex-col justify-between">
+                  <CardHeader className="p-5 pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-col gap-1">
+                        <CardTitle style={{ fontFamily: "'Syne', sans-serif" }} className="text-base font-black tracking-tight line-clamp-1">
+                          {resume.title}
+                        </CardTitle>
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          Created: {dateStr}
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">ATS Score</span>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] font-mono font-bold px-2 py-0.5 ${
+                            isHigh ? 'text-[#4a7c59] border-[#4a7c59]/50 bg-[#4a7c59]/5' :
+                            isMedium ? 'text-[#c4922a] border-[#c4922a]/50 bg-[#c4922a]/5' :
+                            'text-[#b5451b] border-[#b5451b]/50 bg-[#b5451b]/5'
+                          }`}
+                        >
+                          {resume.atsScore}%
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-5 pt-0 flex flex-col gap-4">
+                    {resume.jobTitle ? (
+                      <div className="flex flex-col gap-1 border-t border-border/20 pt-3">
+                        <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">Target Application</span>
+                        <div className="text-[11px] font-semibold text-foreground line-clamp-1">
+                          {resume.jobTitle} <span className="text-muted-foreground">at</span> {resume.company}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-1 border-t border-border/20 pt-3">
+                        <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">Target Application</span>
+                        <div className="text-[11px] text-muted-foreground italic">
+                          Generic Resume
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 border-t border-border/20 pt-4">
+                      <Button size="sm" className="flex-1 h-8 text-[10px] font-bold uppercase tracking-wider justify-between" asChild>
+                        <Link href={`/studio/resumes/${resume._id}`}>
+                          Open Workspace
+                          <ArrowRight className="size-3" />
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        disabled={downloadingId === resume._id}
+                        onClick={() => handleDownloadPDF(resume)}
+                      >
+                        <Download className="size-3" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 hover:bg-[#b5451b]/10 hover:text-[#b5451b] hover:border-[#b5451b]/50"
+                        onClick={() => handleDelete(resume._id)}
+                      >
+                        <Trash2 className="size-3" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
